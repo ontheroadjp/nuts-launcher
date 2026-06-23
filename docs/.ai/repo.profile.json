@@ -1,0 +1,25 @@
+{
+  "repo_id": "nuts-launcher",
+  "package_manager": "none",
+  "doc_roots": [
+    "docs/L0_concept",
+    "docs/L1_project",
+    "docs/L2_development",
+    "docs/L3_implementation"
+  ],
+  "commands": {
+    "install": "cp -r nuts-launcher@local ~/.local/share/gnome-shell/extensions/",
+    "enable": "gnome-extensions enable nuts-launcher@local",
+    "disable": "gnome-extensions disable nuts-launcher@local",
+    "reload": "gnome-extensions disable nuts-launcher@local && gnome-extensions enable nuts-launcher@local",
+    "logs": "journalctl --user -f /usr/bin/gnome-shell",
+    "dbus_show": "gdbus call --session --dest org.gnome.Shell.Extensions.NutsLauncher --object-path /org/gnome/Shell/Extensions/NutsLauncher --method org.gnome.Shell.Extensions.NutsLauncher.Show",
+    "dbus_hide": "gdbus call --session --dest org.gnome.Shell.Extensions.NutsLauncher --object-path /org/gnome/Shell/Extensions/NutsLauncher --method org.gnome.Shell.Extensions.NutsLauncher.Hide",
+    "dbus_toggle": "gdbus call --session --dest org.gnome.Shell.Extensions.NutsLauncher --object-path /org/gnome/Shell/Extensions/NutsLauncher --method org.gnome.Shell.Extensions.NutsLauncher.Toggle",
+    "gnome_version": "gnome-shell --version"
+  },
+  "primary_docs": {
+    "investigation": "docs/L3_implementation/specification_summary.md",
+    "structure": "docs/L1_project/repository_structure.md"
+  }
+}
