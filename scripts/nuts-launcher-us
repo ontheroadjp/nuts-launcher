@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+gdbus call --session \
+    --dest org.gnome.Shell.Extensions.FepSwitcher \
+    --object-path /org/gnome/Shell/Extensions/FepSwitcher \
+    --method org.gnome.Shell.Extensions.FepSwitcher.SwitchToUs
+sleep 0.05
+gdbus call --session \
+    --dest org.gnome.Shell.Extensions.NutsLauncher \
+    --object-path /org/gnome/Shell/Extensions/NutsLauncher \
+    --method org.gnome.Shell.Extensions.NutsLauncher.Show
