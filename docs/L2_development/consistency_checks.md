@@ -2,7 +2,7 @@
 
 ## 整合性確認の観点
 
-このプロジェクトは pre-implementation 状態のため、現時点では「仕様書の整合性」と「実装後の動作検証」が主な確認対象。
+このプロジェクトは実装済みの GNOME Shell extension であり、主な確認対象は metadata、DBus API、UI 操作、disable 時 cleanup、Wayland セッションでの reload 挙動である。
 
 ## 仕様書チェック項目
 
@@ -12,7 +12,7 @@
 - `shell-version` が実機の `gnome-shell --version` 出力と一致すること
 - `name` が `Nuts Launcher` であること
 
-根拠: `nuts-launcher-local-issue.md:455-465`
+根拠: `nuts-launcher@local/metadata.json`
 
 ### DBus interface 名の整合性
 
@@ -24,7 +24,7 @@
 | object path | `/org/gnome/Shell/Extensions/NutsLauncher` |
 | methods | `Show`, `Hide`, `Toggle` |
 
-根拠: `nuts-launcher-local-issue.md:195-213`
+根拠: `nuts-launcher@local/extension.js`
 
 ### disable 時のクリーンアップ確認
 
@@ -37,26 +37,26 @@
 
 確認方法: `gnome-extensions disable nuts-launcher@local` 後に再度 `enable` しても正常動作すること。
 
-根拠: `nuts-launcher-local-issue.md:506-513`
+根拠: `nuts-launcher@local/extension.js`
 
 ## 受け入れ条件チェックリスト（実装後）
 
-根拠: `nuts-launcher-local-issue.md:404-449`
+根拠: `README.md`, `nuts-launcher@local/extension.js`
 
 ### DBus
 
-- [ ] `NutsLauncher.Show` 実行で launcher UI が表示される
+- [x] `NutsLauncher.Show` 実行で launcher UI が表示される
 - [ ] `NutsLauncher.Hide` 実行で launcher UI が閉じる
 - [ ] `NutsLauncher.Toggle` 実行で表示/非表示が切り替わる
 
 ### UI
 
-- [ ] 表示時に検索入力欄へ focus される
-- [ ] 入力すると即時に結果が絞り込まれる
-- [ ] 結果にアプリアイコンとアプリ名が表示される
-- [ ] `Down` / `Up` で選択行が移動する
-- [ ] `Enter` で選択中のアプリが起動する
-- [ ] `Esc` で launcher が閉じる
+- [x] 表示時に検索入力欄へ focus される
+- [x] 入力すると即時に結果が絞り込まれる
+- [x] 結果にアプリアイコンとアプリ名が表示される
+- [x] `Down` / `Up` で選択行が移動する
+- [x] `Enter` で選択中のアプリが起動する
+- [x] `Esc` で launcher が閉じる
 
 ### FEP 連携
 
@@ -76,4 +76,3 @@ CI/CD パイプラインは存在しない（個人用ローカル extension の
 |------|------|---------|
 | GNOME Shell のバージョン | 実機でのみ確認可能 | `gnome-shell --version` を実行 |
 | extension reload の方法 | Wayland では GNOME Shell 再起動が必要な場合あり | 実機で `disable`→`enable` を試行 |
-| `grab_key_focus()` の API 形式 | GNOME Shell version により変わる可能性 | GNOME 46 の GJS API ドキュメント参照 |

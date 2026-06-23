@@ -14,13 +14,17 @@ Minimal GNOME application launcher with DBus control for Ubuntu 24.04 LTS / GNOM
 ## Installation
 
 ```bash
-# Confirm GNOME Shell version (must match metadata.json shell-version)
-gnome-shell --version
+./install.sh
+```
 
-# Copy extension to GNOME extensions directory
+This copies `nuts-launcher@local/` to `~/.local/share/gnome-shell/extensions/` and enables the extension.
+
+> **Note:** The extension targets GNOME Shell 46 (`shell-version: ["46"]`). Confirm with `gnome-shell --version` before installing on a different version.
+
+**Manual steps (alternative):**
+
+```bash
 cp -r nuts-launcher@local ~/.local/share/gnome-shell/extensions/
-
-# Enable the extension
 gnome-extensions enable nuts-launcher@local
 ```
 
@@ -83,4 +87,4 @@ gdbus call --session \
 - **Minimal scope**: No settings UI, no theme switching, no web/file search, no plugin system.
 - **Clean lifecycle**: `disable()` always unexports DBus, releases bus name, disconnects signals, and destroys UI actors.
 
-See `docs/L0_concept/` for full design rationale and `nuts-launcher-local-issue.md` for the original specification.
+See `docs/L0_concept/` and `docs/L3_implementation/` for design rationale and implementation notes.
