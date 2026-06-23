@@ -6,7 +6,6 @@
 nuts-launcher/
 ├── .git/                          # git リポジトリ管理
 ├── .gitignore                     # DS_Store を除外 (確認済み)
-├── nuts-launcher-local-issue.md   # 仕様・設計ドキュメント（実装仕様の source of truth）
 ├── README.md                      # プロジェクト概要
 ├── install.sh                     # インストールスクリプト（コピー + enable）
 ├── nuts-launcher@local/           # GNOME Shell extension 本体
@@ -38,12 +37,6 @@ nuts-launcher/
 根拠: `git diff main...HEAD --name-only`（feat/nuts-launcher-extension ブランチの変更から確認）
 
 ## 各ファイルの責務
-
-### `nuts-launcher-local-issue.md`
-
-実装仕様の source of truth。背景・検討案・機能要件・非機能要件・受け入れ条件・実装メモを含む。
-
-根拠: ファイル内容全体を確認済み（`nuts-launcher-local-issue.md:1-594`）
 
 ### `README.md`
 

@@ -6,7 +6,7 @@
 - `FepSwitcher` GNOME extension が稼働済み
 - CI/CD パイプラインなし（個人用ローカル extension）
 
-根拠: `nuts-launcher-local-issue.md:185-187`
+根拠: `README.md`
 
 ## GNOME Shell バージョン確認
 
@@ -16,7 +16,7 @@ gnome-shell --version
 
 `metadata.json` の `shell-version` フィールドと一致させること。
 
-根拠: `nuts-launcher-local-issue.md:463-468`
+根拠: `nuts-launcher@local/metadata.json`, `README.md`
 
 ## インストール手順
 
@@ -33,7 +33,7 @@ cp -r nuts-launcher@local ~/.local/share/gnome-shell/extensions/
 gnome-extensions enable nuts-launcher@local
 ```
 
-根拠: `install.sh`（実装済み）、`nuts-launcher-local-issue.md:472-474`
+根拠: `install.sh`, `README.md`
 
 ## 無効化
 
@@ -41,7 +41,7 @@ gnome-extensions enable nuts-launcher@local
 gnome-extensions disable nuts-launcher@local
 ```
 
-根拠: `nuts-launcher-local-issue.md:476-478`
+根拠: `README.md`
 
 ## リロード（変更後の反映）
 
@@ -54,7 +54,7 @@ gnome-extensions enable nuts-launcher@local
 
 または Wayland 環境では、GNOME Shell 自体の再ログインが必要になる場合がある（未確認）。
 
-根拠: `nuts-launcher-local-issue.md:472-478`
+根拠: `README.md`
 
 ## ログ確認
 
@@ -62,7 +62,7 @@ gnome-extensions enable nuts-launcher@local
 journalctl --user -f /usr/bin/gnome-shell
 ```
 
-根拠: `nuts-launcher-local-issue.md:480-483`
+根拠: `README.md`
 
 ## DBus 動作確認
 
@@ -77,7 +77,7 @@ gdbus call --session \
   --method org.gnome.Shell.Extensions.NutsLauncher.Show
 ```
 
-根拠: `nuts-launcher-local-issue.md:411-415`
+根拠: `README.md`
 
 ### Hide（非表示）
 
@@ -88,7 +88,7 @@ gdbus call --session \
   --method org.gnome.Shell.Extensions.NutsLauncher.Hide
 ```
 
-根拠: `nuts-launcher-local-issue.md:419-423`
+根拠: `README.md`
 
 ### Toggle（切り替え）
 
@@ -99,7 +99,7 @@ gdbus call --session \
   --method org.gnome.Shell.Extensions.NutsLauncher.Toggle
 ```
 
-根拠: `nuts-launcher-local-issue.md:427-431`
+根拠: `README.md`
 
 ## wrapper script
 
@@ -126,7 +126,7 @@ gdbus call --session \
 
 注意: GNOME custom shortcut で command を指定する場合、`$HOME` が展開されない可能性があるため絶対パスを使う。
 
-根拠: `nuts-launcher-local-issue.md:377-401`
+根拠: `README.md`
 
 ## GNOME custom shortcut への割り当て（残作業）
 
@@ -136,4 +136,4 @@ wrapper script を GNOME custom shortcut に登録する。
 2. GNOME Settings → Keyboard → Custom Shortcuts に絶対パスで登録する
 3. Search Light のショートカットと別管理にする
 
-根拠: `nuts-launcher-local-issue.md:396-401`
+根拠: `README.md`

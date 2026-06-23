@@ -87,4 +87,4 @@ gdbus call --session \
 - **Minimal scope**: No settings UI, no theme switching, no web/file search, no plugin system.
 - **Clean lifecycle**: `disable()` always unexports DBus, releases bus name, disconnects signals, and destroys UI actors.
 
-See `docs/L0_concept/` for full design rationale and `nuts-launcher-local-issue.md` for the original specification.
+See `docs/L0_concept/` and `docs/L3_implementation/` for design rationale and implementation notes.

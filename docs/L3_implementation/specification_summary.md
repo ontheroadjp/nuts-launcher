@@ -2,7 +2,7 @@
 
 ## 実装対象ファイル
 
-根拠: `nuts-launcher-local-issue.md:175-178`
+根拠: `nuts-launcher@local/`
 
 ```
 nuts-launcher@local/
@@ -13,7 +13,7 @@ nuts-launcher@local/
 
 ## metadata.json
 
-根拠: `nuts-launcher-local-issue.md:455-465`
+根拠: `nuts-launcher@local/metadata.json`
 
 ```json
 {
@@ -25,11 +25,11 @@ nuts-launcher@local/
 }
 ```
 
-`shell-version` は `gnome-shell --version` の出力で確定させること。
+`shell-version` は `["46"]`。
 
 ## extension.js: 構造
 
-根拠: `nuts-launcher-local-issue.md:491-502`
+根拠: `nuts-launcher@local/extension.js`
 
 ```js
 import Gio from 'gi://Gio';
@@ -46,7 +46,7 @@ export default class NutsLauncherExtension extends Extension {
 
 ## DBus API
 
-根拠: `nuts-launcher-local-issue.md:191-213`
+根拠: `nuts-launcher@local/extension.js`
 
 | 項目 | 値 |
 |------|-----|
@@ -60,7 +60,7 @@ export default class NutsLauncherExtension extends Extension {
 
 ## UI 仕様
 
-根拠: `nuts-launcher-local-issue.md:219-238`
+根拠: `nuts-launcher@local/extension.js`, `nuts-launcher@local/stylesheet.css`
 
 ```
 +----------------------------------------+
@@ -81,7 +81,7 @@ export default class NutsLauncherExtension extends Extension {
 
 ## アプリ一覧取得
 
-根拠: `nuts-launcher-local-issue.md:242-260`
+根拠: `nuts-launcher@local/extension.js`
 
 ```js
 const apps = Gio.AppInfo.get_all()
@@ -98,7 +98,7 @@ const apps = Gio.AppInfo.get_all()
 
 ## インクリメンタル検索
 
-根拠: `nuts-launcher-local-issue.md:264-284`
+根拠: `nuts-launcher@local/extension.js`
 
 - 入力変更ごとに即時更新
 - case-insensitive 部分一致
@@ -111,7 +111,7 @@ fuzzy search・使用頻度学習は後回し。
 
 ## キーボード操作
 
-根拠: `nuts-launcher-local-issue.md:289-304`
+根拠: `nuts-launcher@local/extension.js`
 
 | キー | 動作 |
 |------|------|
@@ -127,7 +127,7 @@ fuzzy search・使用頻度学習は後回し。
 
 ## アプリ起動
 
-根拠: `nuts-launcher-local-issue.md:309-316`
+根拠: `nuts-launcher@local/extension.js`
 
 ```js
 appInfo.launch([], null);
@@ -138,7 +138,7 @@ appInfo.launch([], null);
 
 ## Show() 時の状態リセット
 
-根拠: `nuts-launcher-local-issue.md:319-333`
+根拠: `nuts-launcher@local/extension.js`
 
 - 検索文字列を空にする
 - 選択 index を 0 に戻す
@@ -147,17 +147,13 @@ appInfo.launch([], null);
 
 ## フォーカス制御
 
-根拠: `nuts-launcher-local-issue.md:517-524`
+根拠: `nuts-launcher@local/extension.js`
 
-実装候補:
-- `global.stage.set_key_focus(entry)`
-- `entry.grab_key_focus()`
-
-GNOME Shell version により使える API を確認すること。
+現行実装は `entry.grab_key_focus()` を使用する。DBus 呼び出し元の key release を奪わないよう、`Show()` は短い timeout 後に modal grab と focus を取得する。
 
 ## アイコン表示
 
-根拠: `nuts-launcher-local-issue.md:533-540`
+根拠: `nuts-launcher@local/extension.js`
 
 ```js
 const icon = appInfo.get_icon();
@@ -168,7 +164,7 @@ const icon = appInfo.get_icon();
 
 ## disable() 時のクリーンアップ（必須）
 
-根拠: `nuts-launcher-local-issue.md:506-513`
+根拠: `nuts-launcher@local/extension.js`
 
 ```
 UI actor を destroy する
@@ -179,7 +175,7 @@ signal handler を disconnect する
 
 ## wrapper script
 
-根拠: `nuts-launcher-local-issue.md:372-401`
+根拠: `README.md`
 
 ファイル: `~/.local/bin/nuts-launcher-us`
 
@@ -187,7 +183,7 @@ FepSwitcher.SwitchToUs() を呼んだ後、`sleep 0.05` を挟んで NutsLaunche
 
 ## やらないこと
 
-根拠: `nuts-launcher-local-issue.md:542-556`
+根拠: `docs/L0_concept/policy.md`
 
 - Search Light 互換 API
 - `ydotool` integration
