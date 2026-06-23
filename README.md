@@ -14,13 +14,17 @@ Minimal GNOME application launcher with DBus control for Ubuntu 24.04 LTS / GNOM
 ## Installation
 
 ```bash
-# Confirm GNOME Shell version (must match metadata.json shell-version)
-gnome-shell --version
+./install.sh
+```
 
-# Copy extension to GNOME extensions directory
+This copies `nuts-launcher@local/` to `~/.local/share/gnome-shell/extensions/` and enables the extension.
+
+> **Note:** The extension targets GNOME Shell 46 (`shell-version: ["46"]`). Confirm with `gnome-shell --version` before installing on a different version.
+
+**Manual steps (alternative):**
+
+```bash
 cp -r nuts-launcher@local ~/.local/share/gnome-shell/extensions/
-
-# Enable the extension
 gnome-extensions enable nuts-launcher@local
 ```
 

@@ -14,3 +14,7 @@ GNOME Shell が extension を識別・ロードするためのメタデータ。
 | `version` | `1` | 初期バージョン |
 
 根拠コード: `nuts-launcher@local/metadata.json`
+
+## 変更履歴（git log より自動生成）
+
+- fd357fc feat(#1): implement nuts-launcher@local GNOME Shell extension

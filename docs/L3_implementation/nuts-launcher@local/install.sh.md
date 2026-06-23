@@ -26,3 +26,7 @@
 - GNOME Shell の再起動（再ログイン）が必要な場合がある（Wayland 環境）
 
 根拠コード: `install.sh`
+
+## 変更履歴（git log より自動生成）
+
+- fd357fc feat(#1): implement nuts-launcher@local GNOME Shell extension

@@ -87,3 +87,7 @@ entry の text-changed
 - アプリのインストール/アンインストール後は `disable` → `enable` でリロードが必要
 
 根拠コード: `nuts-launcher@local/extension.js`
+
+## 変更履歴（git log より自動生成）
+
+- fd357fc feat(#1): implement nuts-launcher@local GNOME Shell extension

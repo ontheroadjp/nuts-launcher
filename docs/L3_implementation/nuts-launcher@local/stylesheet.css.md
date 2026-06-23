@@ -23,3 +23,7 @@
 - 設定 UI なし。変更が必要な場合はこのファイルを直接編集する
 
 根拠コード: `nuts-launcher@local/stylesheet.css`
+
+## 変更履歴（git log より自動生成）
+
+- fd357fc feat(#1): implement nuts-launcher@local GNOME Shell extension

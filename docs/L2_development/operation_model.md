@@ -20,14 +20,20 @@ gnome-shell --version
 
 ## インストール手順
 
-extension ディレクトリをコピーし、有効化する。
+リポジトリルートの `install.sh` を実行する（推奨）。
+
+```bash
+./install.sh
+```
+
+手動で行う場合:
 
 ```bash
 cp -r nuts-launcher@local ~/.local/share/gnome-shell/extensions/
 gnome-extensions enable nuts-launcher@local
 ```
 
-根拠: `nuts-launcher-local-issue.md:472-474`
+根拠: `install.sh`（実装済み）、`nuts-launcher-local-issue.md:472-474`
 
 ## 無効化
 
@@ -122,22 +128,12 @@ gdbus call --session \
 
 根拠: `nuts-launcher-local-issue.md:377-401`
 
-## 実装作業ステップ（未実施）
+## GNOME custom shortcut への割り当て（残作業）
 
-根拠: `nuts-launcher-local-issue.md:559-574`
+wrapper script を GNOME custom shortcut に登録する。
 
-1. extension skeleton (`nuts-launcher@local/` ディレクトリ) を作る
-2. `metadata.json` を作る
-3. `extension.js` で enable / disable の基本構造を作る
-4. DBus `Show()` / `Hide()` / `Toggle()` を実装する
-5. 空の launcher UI を表示できるようにする
-6. 検索 entry に focus できるようにする
-7. `Gio.AppInfo.get_all()` でアプリ一覧を取得する
-8. アプリアイコン + アプリ名の行を表示する
-9. 入力ごとの部分一致 filtering を実装する
-10. 選択 index と Up / Down を実装する
-11. Enter で起動する
-12. Esc で閉じる
-13. wrapper script から FepSwitcher.SwitchToUs() → NutsLauncher.Show() を確認する
-14. GNOME custom shortcut に wrapper script を割り当てる
-15. Search Light なしで日常利用できるか確認する
+1. `~/.local/bin/nuts-launcher-us` に wrapper script を作成・配置する（内容は README.md 参照）
+2. GNOME Settings → Keyboard → Custom Shortcuts に絶対パスで登録する
+3. Search Light のショートカットと別管理にする
+
+根拠: `nuts-launcher-local-issue.md:396-401`

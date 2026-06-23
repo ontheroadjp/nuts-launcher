@@ -7,7 +7,12 @@ nuts-launcher/
 ├── .git/                          # git リポジトリ管理
 ├── .gitignore                     # DS_Store を除外 (確認済み)
 ├── nuts-launcher-local-issue.md   # 仕様・設計ドキュメント（実装仕様の source of truth）
-├── README.md                      # プロジェクト概要（scaffold 済み）
+├── README.md                      # プロジェクト概要
+├── install.sh                     # インストールスクリプト（コピー + enable）
+├── nuts-launcher@local/           # GNOME Shell extension 本体
+│   ├── metadata.json              # extension メタデータ（uuid, shell-version: ["46"]）
+│   ├── extension.js               # DBus, UI, 検索, キー操作, アプリ起動
+│   └── stylesheet.css             # ランチャーの見た目（ハードコーディング）
 ├── docs/                          # AI 向けドキュメント（/init-docs で生成）
 │   ├── .ai/
 │   │   └── repo.profile.json
@@ -21,26 +26,16 @@ nuts-launcher/
 │   │   ├── operation_model.md
 │   │   └── consistency_checks.md
 │   └── L3_implementation/
-│       └── specification_summary.md
+│       ├── specification_summary.md
+│       └── nuts-launcher@local/
+│           ├── extension.js.md
+│           ├── metadata.json.md
+│           ├── stylesheet.css.md
+│           └── install.sh.md
 └── CLAUDE.md                      # AI 運用ガイド
 ```
 
-根拠: `ls -la` 実行結果（2026-06-23 時点）
-
-## 未実装（今後追加予定）
-
-仕様書に記載された実装対象ファイル（`nuts-launcher-local-issue.md:175-178`）はまだ存在しない。
-
-```
-nuts-launcher@local/               # GNOME extension ディレクトリ（未作成）
-├── metadata.json
-├── extension.js
-└── stylesheet.css
-```
-
-これらはリポジトリ内に作成後、インストール先（`~/.local/share/gnome-shell/extensions/nuts-launcher@local/`）にコピーする想定。
-
-根拠: `nuts-launcher-local-issue.md:169-178`
+根拠: `git diff main...HEAD --name-only`（feat/nuts-launcher-extension ブランチの変更から確認）
 
 ## 各ファイルの責務
 
@@ -52,9 +47,27 @@ nuts-launcher@local/               # GNOME extension ディレクトリ（未作
 
 ### `README.md`
 
-プロジェクト概要。現時点では "# Nuts Launcher" のみ。`/init-docs` で scaffold する。
+プロジェクト概要。Features / Installation / Usage / Design Principles を含む。
 
-根拠: ファイル内容確認済み（`README.md:1`）
+根拠: `README.md`
+
+### `install.sh`
+
+`nuts-launcher@local/` を GNOME extensions ディレクトリへコピーし、`gnome-extensions enable` で有効化するまでを一括実行するスクリプト。
+
+根拠: `install.sh`
+
+### `nuts-launcher@local/`
+
+GNOME Shell extension 本体。インストール先は `~/.local/share/gnome-shell/extensions/nuts-launcher@local/`。
+
+| ファイル | 役割 |
+|---------|------|
+| `metadata.json` | GNOME Shell が extension を識別するメタデータ。`shell-version: ["46"]`（GNOME Shell 46.0 実機確認） |
+| `extension.js` | DBus, UI, 検索, キー操作, アプリ起動のメイン実装 |
+| `stylesheet.css` | ランチャー UI のスタイル定義（ダークテーマ固定） |
+
+根拠: `nuts-launcher@local/`（ブランチで実装済み）
 
 ### `.gitignore`
 
