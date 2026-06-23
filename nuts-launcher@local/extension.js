@@ -17,10 +17,15 @@ const DBUS_IFACE = `
 const BUS_NAME = 'org.gnome.Shell.Extensions.NutsLauncher';
 const OBJECT_PATH = '/org/gnome/Shell/Extensions/NutsLauncher';
 const MAX_RESULTS = 10;
+const SHOW_GRAB_DELAY_MS = 120;
 
 export default class NutsLauncherExtension extends Extension {
     enable() {
         this._visible = false;
+        this._modalGrab = null;
+        this._entryTextChangedId = null;
+        this._entryKeyPressId = null;
+        this._showTimeoutId = null;
         this._selectedIndex = 0;
         this._apps = [];
         this._filteredApps = [];
@@ -40,28 +45,35 @@ export default class NutsLauncherExtension extends Extension {
         this._rows = null;
     }
 
-    // --- DBus methods ---
-
-    Show() {
-        this._show();
-    }
-
-    Hide() {
-        this._hide();
-    }
-
-    Toggle() {
-        if (this._visible)
-            this._hide();
-        else
-            this._show();
-    }
-
     // --- DBus lifecycle ---
 
     _exportDBus() {
-        this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(DBUS_IFACE, this);
-        this._dbusImpl.export(Gio.DBus.session, OBJECT_PATH);
+        const nodeInfo = Gio.DBusNodeInfo.new_for_xml(DBUS_IFACE);
+        this._dbusRegistrationId = Gio.DBus.session.register_object(
+            OBJECT_PATH,
+            nodeInfo.interfaces[0],
+            (connection, sender, objectPath, interfaceName, methodName, parameters, invocation) => {
+                if (methodName === 'Show') {
+                    this._queueShow();
+                } else if (methodName === 'Hide') {
+                    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                        if (this._mainBox) this._hide();
+                        return GLib.SOURCE_REMOVE;
+                    });
+                } else if (methodName === 'Toggle') {
+                    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                        if (!this._mainBox) return GLib.SOURCE_REMOVE;
+                        if (this._visible) this._hide();
+                        else this._queueShow();
+                        return GLib.SOURCE_REMOVE;
+                    });
+                }
+                invocation.return_value(null);
+            },
+            null,
+            null
+        );
+
         this._busNameId = Gio.bus_own_name(
             Gio.BusType.SESSION,
             BUS_NAME,
@@ -77,9 +89,9 @@ export default class NutsLauncherExtension extends Extension {
             Gio.bus_unown_name(this._busNameId);
             this._busNameId = null;
         }
-        if (this._dbusImpl) {
-            this._dbusImpl.unexport();
-            this._dbusImpl = null;
+        if (this._dbusRegistrationId) {
+            Gio.DBus.session.unregister_object(this._dbusRegistrationId);
+            this._dbusRegistrationId = null;
         }
     }
 
@@ -105,11 +117,13 @@ export default class NutsLauncherExtension extends Extension {
         });
         this._mainBox.add_child(this._resultsBox);
 
-        this._entry.get_clutter_text().connect('text-changed', () => {
+        const entryText = this._entry.get_clutter_text();
+
+        this._entryTextChangedId = entryText.connect('text-changed', () => {
             this._onSearchChanged();
         });
 
-        this._mainBox.connect('key-press-event', (_, event) => {
+        this._entryKeyPressId = entryText.connect('key-press-event', (_, event) => {
             return this._onKeyPress(event);
         });
 
@@ -118,6 +132,18 @@ export default class NutsLauncherExtension extends Extension {
     }
 
     _destroyUI() {
+        if (this._entry) {
+            const entryText = this._entry.get_clutter_text();
+            if (this._entryTextChangedId)
+                entryText.disconnect(this._entryTextChangedId);
+            if (this._entryKeyPressId)
+                entryText.disconnect(this._entryKeyPressId);
+            this._entryTextChangedId = null;
+            this._entryKeyPressId = null;
+        }
+        this._cancelQueuedShow();
+        this._releaseModalGrab();
+
         if (this._mainBox) {
             Main.layoutManager.removeChrome(this._mainBox);
             this._mainBox.destroy();
@@ -127,6 +153,24 @@ export default class NutsLauncherExtension extends Extension {
         this._resultsBox = null;
     }
 
+    _queueShow() {
+        this._cancelQueuedShow();
+        this._showTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, SHOW_GRAB_DELAY_MS, () => {
+            this._showTimeoutId = null;
+            if (this._mainBox)
+                this._show();
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    _cancelQueuedShow() {
+        if (!this._showTimeoutId)
+            return;
+
+        GLib.source_remove(this._showTimeoutId);
+        this._showTimeoutId = null;
+    }
+
     _show() {
         this._entry.set_text('');
         this._selectedIndex = 0;
@@ -134,13 +178,54 @@ export default class NutsLauncherExtension extends Extension {
         this._mainBox.show();
         this._visible = true;
         this._positionWindow();
-        this._mainBox.grab_key_focus();
-        global.stage.set_key_focus(this._entry.get_clutter_text());
+
+        if (!this._acquireModalGrab()) {
+            this._mainBox.hide();
+            this._visible = false;
+            return;
+        }
+
+        this._entry.grab_key_focus();
     }
 
     _hide() {
+        this._cancelQueuedShow();
         this._mainBox.hide();
         this._visible = false;
+        this._releaseModalGrab();
+    }
+
+    _acquireModalGrab() {
+        if (this._modalGrab)
+            return true;
+
+        const grab = Main.pushModal(this._mainBox);
+        const hasKeyboardGrab = (grab.get_seat_state() & Clutter.GrabState.KEYBOARD) !== 0;
+
+        if (!hasKeyboardGrab) {
+            try {
+                Main.popModal(grab);
+            } catch (e) {
+                console.error('NutsLauncher: failed to release incomplete modal grab:', e);
+            }
+            console.error('NutsLauncher: failed to acquire keyboard grab');
+            return false;
+        }
+
+        this._modalGrab = grab;
+        return true;
+    }
+
+    _releaseModalGrab() {
+        if (!this._modalGrab)
+            return;
+
+        try {
+            Main.popModal(this._modalGrab);
+        } catch (e) {
+            console.error('NutsLauncher: failed to release modal grab:', e);
+        }
+        this._modalGrab = null;
     }
 
     _positionWindow() {
