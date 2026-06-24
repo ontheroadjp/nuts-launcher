@@ -3,6 +3,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as SystemActions from 'resource:///org/gnome/shell/misc/systemActions.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const DBUS_IFACE = `
@@ -33,6 +34,7 @@ export default class NutsLauncherExtension extends Extension {
 
         this._buildUI();
         this._loadApps();
+        this._buildSystemItems();
         this._exportDBus();
     }
 
@@ -241,6 +243,33 @@ export default class NutsLauncherExtension extends Extension {
 
     // --- App list ---
 
+    _buildSystemItems() {
+        const sa = SystemActions.getDefault();
+        this._systemItems = [
+            {
+                displayName: 'Log Out',
+                searchKey: 'log out logout',
+                desktopId: '',
+                icon: Gio.ThemedIcon.new('system-log-out-symbolic'),
+                activate: () => sa.activateLogout(),
+            },
+            {
+                displayName: 'Shut Down',
+                searchKey: 'shut down shutdown power off',
+                desktopId: '',
+                icon: Gio.ThemedIcon.new('system-shutdown-symbolic'),
+                activate: () => sa.activatePowerOff(),
+            },
+            {
+                displayName: 'Restart',
+                searchKey: 'restart reboot',
+                desktopId: '',
+                icon: Gio.ThemedIcon.new('system-reboot-symbolic'),
+                activate: () => sa.activateRestart(),
+            },
+        ];
+    }
+
     _loadApps() {
         this._apps = Gio.AppInfo.get_all()
             .filter(app => app.should_show())
@@ -264,14 +293,19 @@ export default class NutsLauncherExtension extends Extension {
     _updateResults(query) {
         const lq = query.toLowerCase();
         if (lq === '') {
-            this._filteredApps = this._apps.slice(0, MAX_RESULTS);
+            const appSlots = MAX_RESULTS - this._systemItems.length;
+            this._filteredApps = [
+                ...this._apps.slice(0, appSlots),
+                ...this._systemItems,
+            ];
         } else {
-            this._filteredApps = this._apps
-                .filter(a =>
-                    a.searchKey.includes(lq) ||
-                    a.desktopId.includes(lq)
-                )
-                .slice(0, MAX_RESULTS);
+            const filteredApps = this._apps.filter(a =>
+                a.searchKey.includes(lq) || a.desktopId.includes(lq)
+            );
+            const filteredSys = this._systemItems.filter(s =>
+                s.searchKey.includes(lq)
+            );
+            this._filteredApps = [...filteredApps, ...filteredSys].slice(0, MAX_RESULTS);
         }
 
         this._renderResults();
@@ -369,14 +403,18 @@ export default class NutsLauncherExtension extends Extension {
     // --- Launch ---
 
     _launchSelected() {
-        const app = this._filteredApps[this._selectedIndex];
-        if (!app)
+        const item = this._filteredApps[this._selectedIndex];
+        if (!item)
             return;
 
-        try {
-            app.info.launch([], null);
-        } catch (e) {
-            console.error(`NutsLauncher: failed to launch ${app.displayName}:`, e);
+        if (item.activate) {
+            item.activate();
+        } else {
+            try {
+                item.info.launch([], null);
+            } catch (e) {
+                console.error(`NutsLauncher: failed to launch ${item.displayName}:`, e);
+            }
         }
 
         this._hide();
