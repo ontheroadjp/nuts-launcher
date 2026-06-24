@@ -14,7 +14,7 @@
 | `.nuts-launcher-results` | 結果コンテナ (`St.BoxLayout`) | 結果リストの外枠 |
 | `.nuts-launcher-row` | 各アプリ行 (`St.BoxLayout`) | 行のパディング・角丸 |
 | `.nuts-launcher-row:selected` | 選択中の行 | 背景色でハイライト。`add_style_pseudo_class('selected')` で付与される |
-| `.nuts-launcher-icon` | アプリアイコン (`St.Icon`) | アイコンサイズ 24px |
+| `.nuts-launcher-icon` | アプリ・システムアクションアイコン (`St.Icon`) | アイコンサイズ 24px、symbolic アイコン色: white |
 | `.nuts-launcher-label` | アプリ名 (`St.Label`) | テキストサイズ・色 |
 
 ## 設計ポリシー
@@ -26,4 +26,5 @@
 
 ## 変更履歴（git log より自動生成）
 
+- f2d2058 style(#5): set icon color to white for system action visibility
 - fd357fc feat(#1): implement nuts-launcher@local GNOME Shell extension

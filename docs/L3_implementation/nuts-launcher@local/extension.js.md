@@ -144,3 +144,4 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - 96db5d2 feat(#5): add logout, shutdown, and restart options to the launcher
 - 5419f6a fix(#1): stabilize launcher keyboard grab
 - fd357fc feat(#1): implement nuts-launcher@local GNOME Shell extension
+

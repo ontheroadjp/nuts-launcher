@@ -7,6 +7,7 @@ Minimal GNOME application launcher with DBus control for Ubuntu 24.04 LTS / GNOM
 - DBus API (`Show()` / `Hide()` / `Toggle()`) for external control
 - Incremental search (case-insensitive substring match)
 - App icon + name display using `Gio.AppInfo`
+- System actions: Log Out, Shut Down, Restart (always shown at the bottom; searchable)
 - Keyboard navigation: `Enter` to launch, `Esc` to close, `Up`/`Down` to select
 - State reset on every `Show()` call (clears input, resets selection, focuses entry)
 - Clean `disable()` with full DBus and signal cleanup

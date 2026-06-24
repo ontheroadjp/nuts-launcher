@@ -36,6 +36,7 @@ import Gio from 'gi://Gio';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as SystemActions from 'resource:///org/gnome/shell/misc/systemActions.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 export default class NutsLauncherExtension extends Extension {
@@ -70,16 +71,20 @@ export default class NutsLauncherExtension extends Extension {
 |  [icon] Google Chrome                  |
 |  [icon] Files                          |
 |  [icon] Settings                       |
+|  [icon] Log Out                        |
+|  [icon] Shut Down                      |
+|  [icon] Restart                        |
 +----------------------------------------+
 ```
 
 - 画面中央（primary monitor）に表示
 - 検索入力欄 + 検索結果一覧
-- 各行にアプリアイコン（St.Icon）とアプリ名を表示
+- 各行にアイコン（St.Icon）とアイテム名を表示
 - 選択中の行が視覚的に区別できること
 - テーマ・設定 UI は不要
+- システムアクション（Log Out / Shut Down / Restart）はリスト末尾に常時表示
 
-## アプリ一覧取得
+## アプリ一覧取得とシステムアクション
 
 根拠: `nuts-launcher@local/extension.js`
 
@@ -96,6 +101,8 @@ const apps = Gio.AppInfo.get_all()
 - icon (`get_icon()`)
 - desktop id（取得できる場合: `get_id()`）
 
+システムアクション（Log Out / Shut Down / Restart）は `_buildSystemItems()` で静的に構築する。各アイテムは `displayName`・`searchKey`・`icon`・`activate` を持ち、`activate` は `SystemActions.getDefault()` の各メソッドへの closure。
+
 ## インクリメンタル検索
 
 根拠: `nuts-launcher@local/extension.js`
@@ -103,9 +110,9 @@ const apps = Gio.AppInfo.get_all()
 - 入力変更ごとに即時更新
 - case-insensitive 部分一致
 - 検索対象: display name, app name, desktop id
-- 入力が空の場合: 先頭 N 件（8〜10 件）を表示
-- 入力がある場合: 部分一致するアプリのみ表示
-- 最大表示件数: 8〜10 件
+- 入力が空の場合: 先頭 N 件のアプリ + 全システムアクションを末尾に表示（合計 MAX_RESULTS = 10）
+- 入力がある場合: 部分一致するアプリ + 部分一致するシステムアクションを表示
+- 最大表示件数: 10 件
 
 fuzzy search・使用頻度学習は後回し。
 
@@ -125,16 +132,23 @@ fuzzy search・使用頻度学習は後回し。
 - 表示直後に検索入力欄へフォーカス
 - 通常文字キーが検索欄へ入ること
 
-## アプリ起動
+## アイテム起動
 
 根拠: `nuts-launcher@local/extension.js`
 
+アプリの場合:
 ```js
-appInfo.launch([], null);
+item.info.launch([], null);
 ```
 
-- 起動成功後: launcher を閉じる
-- 起動失敗時: GNOME Shell log に error を出して launcher を閉じる
+システムアクションの場合:
+```js
+item.activate(); // SystemActions.getDefault().activateLogout() 等
+```
+
+- 起動後: launcher を閉じる
+- アプリ起動失敗時: GNOME Shell log に error を出して launcher を閉じる
+- システムアクションは GNOME Shell の確認ダイアログを経由する
 
 ## Show() 時の状態リセット
 
