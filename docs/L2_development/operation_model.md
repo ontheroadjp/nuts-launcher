@@ -105,7 +105,7 @@ gdbus call --session \
 
 FepSwitcher → NutsLauncher.Show() の順番制御は wrapper script で行う。
 
-ファイル: `~/.local/bin/nuts-launcher-us`
+ファイル: `~/.local/bin/trigger-nuts-launcher`（`install.sh` 実行時に `scripts/trigger-nuts-launcher` への symlink として自動配置される）
 
 ```bash
 #!/usr/bin/env bash
@@ -128,12 +128,8 @@ gdbus call --session \
 
 根拠: `README.md`
 
-## GNOME custom shortcut への割り当て（残作業）
+## GNOME custom shortcut への割り当て
 
-wrapper script を GNOME custom shortcut に登録する。
+`./install.sh` 実行時に `setup_shortcut()` が自動で行う（`<Control><Shift>space` を `~/.local/bin/trigger-nuts-launcher` に割り当て）。再実行しても重複登録されない。既存の他 custom shortcut と binding が衝突する場合は自動登録をスキップし、手動での割り当てを促す。
 
-1. `~/.local/bin/nuts-launcher-us` に wrapper script を作成・配置する（内容は README.md 参照）
-2. GNOME Settings → Keyboard → Custom Shortcuts に絶対パスで登録する
-3. Search Light のショートカットと別管理にする
-
-根拠: `README.md`
+根拠: `install.sh`, `docs/L3_implementation/nuts-launcher@local/install.sh.md`

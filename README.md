@@ -61,7 +61,7 @@ journalctl --user -f /usr/bin/gnome-shell
 
 ### FEP integration (wrapper script)
 
-Place the following at `~/.local/bin/nuts-launcher-us` and assign it to a GNOME custom shortcut using the absolute path:
+`./install.sh` automatically symlinks this script to `~/.local/bin/trigger-nuts-launcher` and registers it as a GNOME custom shortcut (`Ctrl+Shift+Space`). The script itself:
 
 ```bash
 #!/usr/bin/env bash
