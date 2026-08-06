@@ -1,6 +1,7 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Shell from 'gi://Shell';
 import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as SystemActions from 'resource:///org/gnome/shell/misc/systemActions.js';
@@ -201,7 +202,11 @@ export default class NutsLauncherExtension extends Extension {
         if (this._modalGrab)
             return true;
 
-        const grab = Main.pushModal(this._mainBox);
+        // actionMode: NORMAL keeps GNOME's own global accelerators (e.g. the
+        // gsettings custom-keybinding that toggles this launcher) dispatchable
+        // while the grab is held; the default action mode blocks them entirely,
+        // which is what prevented Ctrl+Shift+Space from closing the launcher.
+        const grab = Main.pushModal(this._mainBox, { actionMode: Shell.ActionMode.NORMAL });
         const hasKeyboardGrab = (grab.get_seat_state() & Clutter.GrabState.KEYBOARD) !== 0;
 
         if (!hasKeyboardGrab) {
