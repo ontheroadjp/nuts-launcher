@@ -54,7 +54,7 @@ Ubuntu 24.04 LTS / GNOME Wayland 環境で、FEP/IME が US に切り替わっ�
 ## 連携コンポーネント
 
 - `FepSwitcher` GNOME Shell extension: DBus `SwitchToUs()` で FEP を US に切り替える（修正しない）
-- wrapper script (`~/.local/bin/nuts-launcher-us`): FepSwitcher → NutsLauncher.Show() の順序制御
-- GNOME custom shortcut: wrapper script を呼び出すトリガー
+- wrapper script (`~/.local/bin/trigger-nuts-launcher`): FepSwitcher → NutsLauncher.Show() の順序制御
+- GNOME custom shortcut: wrapper script を呼び出すトリガー（`install.sh` が自動登録する）
 
-根拠: `README.md`
+根拠: `README.md`, `install.sh`

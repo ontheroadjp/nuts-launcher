@@ -61,5 +61,6 @@
 
 ## 変更履歴（git log より自動生成）
 
+- a226491 feat(#7): auto-register GNOME keyboard shortcut from install.sh
 - 5419f6a fix(#1): stabilize launcher keyboard grab
 - fd357fc feat(#1): implement nuts-launcher@local GNOME Shell extension
