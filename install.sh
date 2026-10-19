@@ -23,11 +23,13 @@ fi
 
 mkdir -p "${HOME}/.local/share/gnome-shell/extensions"
 
-# Remove existing installation to avoid nested copy
+# Symlink instead of copying so repo changes reach the installed extension
+# without reinstalling. Remove any previous copy or link first: ln -s onto an
+# existing directory would create the link inside it.
 rm -rf "$INSTALL_DIR"
-cp -r "$EXTENSION_DIR" "$INSTALL_DIR"
+ln -s "$EXTENSION_DIR" "$INSTALL_DIR"
 
-echo "Files copied to: ${INSTALL_DIR}"
+echo "Symlinked: ${INSTALL_DIR} -> ${EXTENSION_DIR}"
 
 echo "Enabling extension..."
 if gnome-extensions enable "$EXTENSION_UUID" 2>/dev/null; then

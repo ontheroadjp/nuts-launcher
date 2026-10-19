@@ -46,9 +46,9 @@ disable()
 
 `Show()` は直接 `_show()` せず、`SHOW_GRAB_DELAY_MS` 後に `_show()` する。DBus 呼び出し元 terminal/tmux の起動キー release が GNOME Shell の keyboard grab に奪われると、呼び出し元 pane 側でキー repeat 状態が残ることがあるため。
 
-`_show()` は検索欄を空にし、選択 index を 0 に戻し、結果を再描画してから UI を表示する。その後 `Main.pushModal()` で modal grab を取得し、`Clutter.GrabState.KEYBOARD` が含まれる場合だけ entry に `grab_key_focus()` する。
+`_show()` は検索欄を空にし、選択 index を 0 に戻し、結果を再描画してから UI を表示する。その後 `Main.pushModal()` で modal grab を取得し、`_hasKeyboardGrab()` が keyboard grab の取得を確認できた場合だけ entry に `grab_key_focus()` する。取得できなかった場合は grab を pop して UI を隠す。
 
-根拠コード: `nuts-launcher@local/extension.js:157-190`
+根拠コード: `nuts-launcher@local/extension.js:159-192`, `nuts-launcher@local/extension.js:201-232`
 
 ### UI と signal
 
@@ -96,7 +96,15 @@ UI は `St.BoxLayout` の root、`St.Entry`、結果一覧用 `St.BoxLayout` で
 
 `Main.pushModal()` の戻り値を `_modalGrab` に保存し、解放時は同じ object を `Main.popModal()` に渡す。actor を渡して pop すると `incorrect pop` で extension が error state になる可能性がある。
 
-根拠コード: `nuts-launcher@local/extension.js:200-230`
+根拠コード: `nuts-launcher@local/extension.js:201-244`
+
+### keyboard grab の判定は GNOME version 差を吸収する
+
+GNOME 46 では `grab.get_seat_state()` の `Clutter.GrabState.KEYBOARD` ビットで判定する。GNOME 50（mutter 18）では `Clutter.Grab` から `get_seat_state()` が削除され、`activate` / `dismiss` / `is_revoked` しか残っていないため、`!grab.is_revoked()` で判定する。`get_seat_state` の有無で分岐し、両 version を同じコードで扱う。
+
+`get_seat_state()` を無条件に呼ぶと GNOME 50 では `TypeError` になり、`_show()` が `grab_key_focus()` 前に中断して launcher にフォーカスが当たらず、`pushModal()` 済みの grab も `_modalGrab` に保存されないままリークする。
+
+根拠コード: `nuts-launcher@local/extension.js:225-232`
 
 ### 表示を短く遅延する
 
@@ -129,11 +137,12 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - GNOME app list: `Gio.AppInfo.get_all()`
 - GNOME system actions: `SystemActions.getDefault()` from `resource:///org/gnome/shell/misc/systemActions.js`
 - UI toolkit: `St.BoxLayout`, `St.Entry`, `St.Icon`, `St.Label`
-- Event handling: `Clutter.KEY_*`, `Clutter.GrabState.KEYBOARD`
+- Event handling: `Clutter.KEY_*`, `Clutter.GrabState.KEYBOARD`（GNOME 46）, `Clutter.Grab.is_revoked()`（GNOME 50）
 
 ## 注意事項・既知の制限
 
-- `shell-version: ["46"]` を対象にしている
+- `shell-version: ["46", "50"]` を対象にしている
+- GNOME 50 の `is_revoked()` 判定は、gnome-shell 本体が grab 結果を検査しなくなったため代替として採用したもの。keyboard を取得できなかった grab を確実に検出できるかは未検証
 - アプリ一覧は `enable()` 時にキャッシュするため、インストール/アンインストール後は extension reload が必要
 - multi-monitor 対応は primary monitor のみ
 - fuzzy search、最近使ったアプリ、使用頻度学習は未実装
