@@ -29,7 +29,7 @@ gnome-shell --version
 手動で行う場合:
 
 ```bash
-cp -r nuts-launcher@local ~/.local/share/gnome-shell/extensions/
+ln -s "$PWD/nuts-launcher@local" ~/.local/share/gnome-shell/extensions/nuts-launcher@local
 gnome-extensions enable nuts-launcher@local
 ```
 

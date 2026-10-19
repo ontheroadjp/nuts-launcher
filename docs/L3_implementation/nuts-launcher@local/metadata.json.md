@@ -17,4 +17,5 @@ GNOME Shell が extension を識別・ロードするためのメタデータ。
 
 ## 変更履歴（git log より自動生成）
 
+- 08e7230 fix(#9): restore launcher focus on GNOME 50 and install via symlink
 - fd357fc feat(#1): implement nuts-launcher@local GNOME Shell extension

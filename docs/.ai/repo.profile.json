@@ -8,7 +8,7 @@
     "docs/L3_implementation"
   ],
   "commands": {
-    "install": "cp -r nuts-launcher@local ~/.local/share/gnome-shell/extensions/",
+    "install": "ln -s \"$PWD/nuts-launcher@local\" ~/.local/share/gnome-shell/extensions/nuts-launcher@local",
     "enable": "gnome-extensions enable nuts-launcher@local",
     "disable": "gnome-extensions disable nuts-launcher@local",
     "reload": "gnome-extensions disable nuts-launcher@local && gnome-extensions enable nuts-launcher@local",
