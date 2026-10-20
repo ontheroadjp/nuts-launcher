@@ -20,12 +20,12 @@ nuts-launcher@local/
   "uuid": "nuts-launcher@local",
   "name": "Nuts Launcher",
   "description": "Minimal GNOME application launcher with DBus control",
-  "shell-version": ["46"],
+  "shell-version": ["46", "50"],
   "version": 1
 }
 ```
 
-`shell-version` は `["46"]`。
+`shell-version` は `["46", "50"]`（GNOME Shell 46 / 50）。
 
 ## extension.js: 構造
 
@@ -164,6 +164,8 @@ item.activate(); // SystemActions.getDefault().activateLogout() 等
 根拠: `nuts-launcher@local/extension.js`
 
 現行実装は `entry.grab_key_focus()` を使用する。DBus 呼び出し元の key release を奪わないよう、`Show()` は短い timeout 後に modal grab と focus を取得する。
+
+keyboard grab の取得確認は GNOME 46 では `grab.get_seat_state()` の `Clutter.GrabState.KEYBOARD`、`get_seat_state()` が削除された GNOME 50 では `!grab.is_revoked()` で行う。
 
 ## アイコン表示
 

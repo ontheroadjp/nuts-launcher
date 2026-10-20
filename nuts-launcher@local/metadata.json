@@ -2,6 +2,6 @@
   "uuid": "nuts-launcher@local",
   "name": "Nuts Launcher",
   "description": "Minimal GNOME application launcher with DBus control",
-  "shell-version": ["46"],
+  "shell-version": ["46", "50"],
   "version": 1
 }

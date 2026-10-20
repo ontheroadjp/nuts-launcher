@@ -7,9 +7,9 @@ nuts-launcher/
 ├── .git/                          # git リポジトリ管理
 ├── .gitignore                     # DS_Store を除外 (確認済み)
 ├── README.md                      # プロジェクト概要
-├── install.sh                     # インストールスクリプト（コピー + enable）
+├── install.sh                     # インストールスクリプト（symlink + enable）
 ├── nuts-launcher@local/           # GNOME Shell extension 本体
-│   ├── metadata.json              # extension メタデータ（uuid, shell-version: ["46"]）
+│   ├── metadata.json              # extension メタデータ（uuid, shell-version: ["46", "50"]）
 │   ├── extension.js               # DBus, UI, 検索, キー操作, アプリ起動
 │   └── stylesheet.css             # ランチャーの見た目（ハードコーディング）
 ├── docs/                          # AI 向けドキュメント（/init-docs で生成）
@@ -46,7 +46,7 @@ nuts-launcher/
 
 ### `install.sh`
 
-`nuts-launcher@local/` を GNOME extensions ディレクトリへコピーし、`gnome-extensions enable` で有効化するまでを一括実行するスクリプト。
+GNOME extensions ディレクトリに `nuts-launcher@local/` への symlink を作成し、`gnome-extensions enable` で有効化するまでを一括実行するスクリプト。
 
 根拠: `install.sh`
 
@@ -56,7 +56,7 @@ GNOME Shell extension 本体。インストール先は `~/.local/share/gnome-sh
 
 | ファイル | 役割 |
 |---------|------|
-| `metadata.json` | GNOME Shell が extension を識別するメタデータ。`shell-version: ["46"]`（GNOME Shell 46.0 実機確認） |
+| `metadata.json` | GNOME Shell が extension を識別するメタデータ。`shell-version: ["46", "50"]`（GNOME Shell 46.0 / 50.1 実機確認） |
 | `extension.js` | DBus, UI, 検索, キー操作, アプリ起動のメイン実装 |
 | `stylesheet.css` | ランチャー UI のスタイル定義（ダークテーマ固定） |
 

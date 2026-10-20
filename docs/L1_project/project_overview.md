@@ -17,7 +17,7 @@ Ubuntu 24.04 LTS / GNOME Wayland 環境で、FEP/IME が US に切り替わっ�
 | 要素 | 内容 | 根拠 |
 |------|------|------|
 | 実装言語 | GJS (GNOME JavaScript) | `nuts-launcher@local/extension.js` |
-| ランタイム | GNOME Shell (Ubuntu 24.04 LTS, GNOME 46+) | `nuts-launcher@local/metadata.json` |
+| ランタイム | GNOME Shell (Ubuntu 24.04 LTS / GNOME 46, Ubuntu 26.04 LTS / GNOME 50) | `nuts-launcher@local/metadata.json` |
 | UI フレームワーク | St (Shell Toolkit), Clutter | `nuts-launcher@local/extension.js` |
 | システム API | Gio (アプリ一覧, DBus) | `nuts-launcher@local/extension.js` |
 | 通信 | DBus (Session Bus) | `nuts-launcher@local/extension.js` |

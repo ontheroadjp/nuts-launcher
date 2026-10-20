@@ -2,14 +2,14 @@
 
 ## 目的・役割
 
-`nuts-launcher@local/` を GNOME extensions ディレクトリへコピーし、`gnome-extensions enable` で有効化するまでを一括実行するインストールスクリプト。
+GNOME extensions ディレクトリに repo の `nuts-launcher@local/` への symlink を作成し、`gnome-extensions enable` で有効化するまでを一括実行するインストールスクリプト。
 
 ## 動作フロー
 
 ```
 1. スクリプトのディレクトリを基準に EXTENSION_DIR を解決
-2. 既存の INSTALL_DIR (${HOME}/.local/share/gnome-shell/extensions/nuts-launcher@local) を削除
-3. INSTALL_DIR へ `nuts-launcher@local/` を `cp -r`
+2. 既存の INSTALL_DIR (${HOME}/.local/share/gnome-shell/extensions/nuts-launcher@local) を削除（旧方式のコピーでも symlink でも可）
+3. INSTALL_DIR を EXTENSION_DIR への symlink として `ln -s` で作成
 4. `gnome-extensions enable nuts-launcher@local` を実行
 5. 成功時は動作確認コマンド（gdbus call Show）を標準出力に案内
 6. 失敗時は Wayland で GNOME Shell が extension をまだ認識していない可能性と、再ログイン後の enable 手順を案内
@@ -24,11 +24,13 @@
 
 ## 注意事項
 
-- 既存インストールがある場合は削除してからコピーするため、ネストしたコピーを避けられる
+- コピーではなく symlink にしているのは、repo 側のコード変更を再インストールなしで反映するため（`scripts/trigger-nuts-launcher` の配置と同じ方針）。反映には GNOME Shell の再読み込み（Wayland では再ログイン）が必要
+- `ln -s` の前に INSTALL_DIR を削除するのは、既存ディレクトリに対する `ln -s` がその内側にリンクを作ってしまうため。INSTALL_DIR が symlink の場合、`rm -rf` はリンク自体だけを削除し repo 側は消さない
+- repo を移動・削除すると INSTALL_DIR のリンクが切れ、extension はロードされなくなる
 - `gnome-extensions enable` に失敗しても案内を表示し、スクリプト自体は異常終了しない
 - GNOME Shell の再起動（再ログイン）が必要な場合がある（Wayland 環境）
 
-根拠コード: `install.sh`
+根拠コード: `install.sh:24-32`
 
 ## `setup_shortcut()`: GNOME custom shortcut 自動登録
 

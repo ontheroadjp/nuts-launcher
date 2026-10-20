@@ -207,9 +207,8 @@ export default class NutsLauncherExtension extends Extension {
         // while the grab is held; the default action mode blocks them entirely,
         // which is what prevented Ctrl+Shift+Space from closing the launcher.
         const grab = Main.pushModal(this._mainBox, { actionMode: Shell.ActionMode.NORMAL });
-        const hasKeyboardGrab = (grab.get_seat_state() & Clutter.GrabState.KEYBOARD) !== 0;
 
-        if (!hasKeyboardGrab) {
+        if (!this._hasKeyboardGrab(grab)) {
             try {
                 Main.popModal(grab);
             } catch (e) {
@@ -221,6 +220,15 @@ export default class NutsLauncherExtension extends Extension {
 
         this._modalGrab = grab;
         return true;
+    }
+
+    _hasKeyboardGrab(grab) {
+        // GNOME 46 exposes the grabbed seat state. GNOME 50 (mutter 18)
+        // removed get_seat_state(); Clutter.Grab only offers is_revoked().
+        if (typeof grab.get_seat_state === 'function')
+            return (grab.get_seat_state() & Clutter.GrabState.KEYBOARD) !== 0;
+
+        return !grab.is_revoked();
     }
 
     _releaseModalGrab() {

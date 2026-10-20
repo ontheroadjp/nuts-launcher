@@ -18,14 +18,14 @@ Minimal GNOME application launcher with DBus control for Ubuntu 24.04 LTS / GNOM
 ./install.sh
 ```
 
-This copies `nuts-launcher@local/` to `~/.local/share/gnome-shell/extensions/` and enables the extension.
+This symlinks `~/.local/share/gnome-shell/extensions/nuts-launcher@local` to the repo's `nuts-launcher@local/` and enables the extension. Code changes in the repo take effect after the next GNOME Shell reload (log out and back in on Wayland) without reinstalling.
 
-> **Note:** The extension targets GNOME Shell 46 (`shell-version: ["46"]`). Confirm with `gnome-shell --version` before installing on a different version.
+> **Note:** The extension targets GNOME Shell 46 and 50 (`shell-version: ["46", "50"]`). Confirm with `gnome-shell --version` before installing on a different version.
 
 **Manual steps (alternative):**
 
 ```bash
-cp -r nuts-launcher@local ~/.local/share/gnome-shell/extensions/
+ln -s "$PWD/nuts-launcher@local" ~/.local/share/gnome-shell/extensions/nuts-launcher@local
 gnome-extensions enable nuts-launcher@local
 ```
 
