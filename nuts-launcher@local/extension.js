@@ -5,6 +5,7 @@ import Shell from 'gi://Shell';
 import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as SystemActions from 'resource:///org/gnome/shell/misc/systemActions.js';
+import * as ShellMountOperation from 'resource:///org/gnome/shell/ui/shellMountOperation.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const DBUS_IFACE = `
@@ -32,6 +33,7 @@ export default class NutsLauncherExtension extends Extension {
         this._apps = [];
         this._filteredApps = [];
         this._rows = [];
+        this._ejectItems = [];
 
         this._buildUI();
         this._loadApps();
@@ -46,6 +48,7 @@ export default class NutsLauncherExtension extends Extension {
         this._apps = null;
         this._filteredApps = null;
         this._rows = null;
+        this._ejectItems = null;
     }
 
     // --- DBus lifecycle ---
@@ -175,6 +178,7 @@ export default class NutsLauncherExtension extends Extension {
     }
 
     _show() {
+        this._buildEjectItems();
         this._entry.set_text('');
         this._selectedIndex = 0;
         this._updateResults('');
@@ -283,6 +287,58 @@ export default class NutsLauncherExtension extends Extension {
         ];
     }
 
+    _buildEjectItems() {
+        // One item per removable drive that currently has a visible mount.
+        // Rebuilt on every Show() so hot-plugged devices are picked up
+        // without holding VolumeMonitor signal connections.
+        const drives = new Map();
+        for (const mount of Gio.VolumeMonitor.get().get_mounts()) {
+            if (mount.is_shadowed())
+                continue;
+            const drive = mount.get_drive();
+            if (!drive || !(drive.is_removable() || drive.can_eject() || drive.can_stop()))
+                continue;
+            if (!drives.has(drive))
+                drives.set(drive, []);
+            drives.get(drive).push(mount);
+        }
+
+        this._ejectItems = [...drives].map(([drive, mounts]) => {
+            const name = mounts.map(m => m.get_name()).join(', ');
+            return {
+                displayName: `Eject ${name}`,
+                searchKey: `eject unmount remove ${name}`.toLowerCase(),
+                desktopId: '',
+                icon: Gio.ThemedIcon.new('media-eject-symbolic'),
+                activate: () => this._ejectDrive(drive, mounts[0], name),
+            };
+        });
+    }
+
+    _ejectDrive(drive, mount, name) {
+        // stop() powers the drive down after unmounting (safe for USB HDDs);
+        // eject() is the fallback for media drives such as optical drives.
+        const [start, finish] = drive.can_stop()
+            ? ['stop', 'stop_finish']
+            : ['eject_with_operation', 'eject_with_operation_finish'];
+
+        // ShellMountOperation shows GNOME's "device is busy" dialog when needed.
+        // It expects a mount or volume (it calls source.get_drive()), not a drive.
+        const op = new ShellMountOperation.ShellMountOperation(mount);
+        drive[start](Gio.MountUnmountFlags.NONE, op.mountOp, null, (source, res) => {
+            op.close();
+            try {
+                source[finish](res);
+                Main.notify(`${name} can be safely removed`);
+            } catch (e) {
+                if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.FAILED_HANDLED)) {
+                    console.error(`NutsLauncher: failed to eject ${name}:`, e);
+                    Main.notifyError(`Failed to eject ${name}`, e.message);
+                }
+            }
+        });
+    }
+
     _loadApps() {
         this._apps = Gio.AppInfo.get_all()
             .filter(app => app.should_show())
@@ -305,17 +361,18 @@ export default class NutsLauncherExtension extends Extension {
 
     _updateResults(query) {
         const lq = query.toLowerCase();
+        const systemItems = [...this._ejectItems, ...this._systemItems];
         if (lq === '') {
-            const appSlots = MAX_RESULTS - this._systemItems.length;
+            const appSlots = Math.max(0, MAX_RESULTS - systemItems.length);
             this._filteredApps = [
                 ...this._apps.slice(0, appSlots),
-                ...this._systemItems,
+                ...systemItems,
             ];
         } else {
             const filteredApps = this._apps.filter(a =>
                 a.searchKey.includes(lq) || a.desktopId.includes(lq)
             );
-            const filteredSys = this._systemItems.filter(s =>
+            const filteredSys = systemItems.filter(s =>
                 s.searchKey.includes(lq)
             );
             this._filteredApps = [...filteredApps, ...filteredSys].slice(0, MAX_RESULTS);
