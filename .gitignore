@@ -1,1 +1,7 @@
 DS_Store
+# core-toolkit-for-claude (install.sh)
+.claude/commands/
+.claude/hooks/
+.claude/scripts/
+.claude/skills/
+.claude/templates/
