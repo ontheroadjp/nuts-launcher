@@ -37,6 +37,7 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as SystemActions from 'resource:///org/gnome/shell/misc/systemActions.js';
+import * as ShellMountOperation from 'resource:///org/gnome/shell/ui/shellMountOperation.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 export default class NutsLauncherExtension extends Extension {
@@ -71,6 +72,7 @@ export default class NutsLauncherExtension extends Extension {
 |  [icon] Google Chrome                  |
 |  [icon] Files                          |
 |  [icon] Settings                       |
+|  [icon] Eject HD-PCTU3_White           |
 |  [icon] Log Out                        |
 |  [icon] Shut Down                      |
 |  [icon] Restart                        |
@@ -83,6 +85,7 @@ export default class NutsLauncherExtension extends Extension {
 - 選択中の行が視覚的に区別できること
 - テーマ・設定 UI は不要
 - システムアクション（Log Out / Shut Down / Restart）はリスト末尾に常時表示
+- 外付けデバイスが接続されている場合、デバイスごとに `Eject <名前>` をシステムアクションの直前に表示（デバイスがなければ表示しない）
 
 ## アプリ一覧取得とシステムアクション
 
@@ -103,6 +106,8 @@ const apps = Gio.AppInfo.get_all()
 
 システムアクション（Log Out / Shut Down / Restart）は `_buildSystemItems()` で静的に構築する。各アイテムは `displayName`・`searchKey`・`icon`・`activate` を持ち、`activate` は `SystemActions.getDefault()` の各メソッドへの closure。
 
+eject アイテムは `_buildEjectItems()` で `Show()` ごとに再構築する。`Gio.VolumeMonitor` の mount を drive 単位でまとめ、removable / ejectable / stoppable な drive だけを対象にする。
+
 ## インクリメンタル検索
 
 根拠: `nuts-launcher@local/extension.js`
@@ -110,8 +115,8 @@ const apps = Gio.AppInfo.get_all()
 - 入力変更ごとに即時更新
 - case-insensitive 部分一致
 - 検索対象: display name, app name, desktop id
-- 入力が空の場合: 先頭 N 件のアプリ + 全システムアクションを末尾に表示（合計 MAX_RESULTS = 10）
-- 入力がある場合: 部分一致するアプリ + 部分一致するシステムアクションを表示
+- 入力が空の場合: 先頭 N 件のアプリ + 全 eject アイテム・全システムアクションを末尾に表示（合計 MAX_RESULTS = 10）
+- 入力がある場合: 部分一致するアプリ + 部分一致する eject アイテム・システムアクションを表示（eject は `eject` / `unmount` / `remove` / デバイス名で検索可）
 - 最大表示件数: 10 件
 
 fuzzy search・使用頻度学習は後回し。
@@ -143,12 +148,13 @@ item.info.launch([], null);
 
 システムアクションの場合:
 ```js
-item.activate(); // SystemActions.getDefault().activateLogout() 等
+item.activate(); // SystemActions.getDefault().activateLogout()、_ejectDrive() 等
 ```
 
 - 起動後: launcher を閉じる
 - アプリ起動失敗時: GNOME Shell log に error を出して launcher を閉じる
 - システムアクションは GNOME Shell の確認ダイアログを経由する
+- eject は `drive.stop()`（不可なら `drive.eject_with_operation()`）を `ShellMountOperation` 付きで実行し、結果を通知する
 
 ## Show() 時の状態リセット
 
