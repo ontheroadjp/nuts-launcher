@@ -5,3 +5,9 @@ DS_Store
 .claude/scripts/
 .claude/skills/
 .claude/templates/
+.codex/commands/
+.codex/hooks/
+.codex/scripts/
+.codex/skills/
+.codex/templates/
+.codex/hooks.json
