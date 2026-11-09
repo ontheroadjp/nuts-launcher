@@ -2,7 +2,7 @@
 
 ## 目的・役割
 
-GNOME Shell extension `nuts-launcher@local` のメイン実装。DBus サービス、ランチャー UI、アプリ一覧取得、システムアクション（logout/shutdown/restart）、外付けデバイスの eject、インクリメンタル検索、キーボード操作、アイテム起動をこのファイルにまとめている。
+GNOME Shell extension `nuts-launcher@local` のメイン実装。DBus サービス、ランチャー UI、アプリ一覧取得、システムアクション（suspend/logout/shutdown/restart）、外付けデバイスの eject、インクリメンタル検索、キーボード操作、アイテム起動をこのファイルにまとめている。
 
 根拠コード: `nuts-launcher@local/extension.js:1-492`
 
@@ -62,7 +62,7 @@ UI は `St.BoxLayout` の root、`St.Entry`、結果一覧用 `St.BoxLayout` で
 
 アプリ一覧は `enable()` 時に `Gio.AppInfo.get_all()` から取得し、`should_show()` と display name で絞り込む。
 
-システムアクション（Log Out、Shut Down、Restart）は `_buildSystemItems()` で静的に構築する。各アイテムは `displayName`、`searchKey`（複数キーワードを空白区切りで含む）、`icon`、`activate` を持つ。`activate` は `SystemActions.getDefault()` の各メソッドへの closure。
+システムアクション（Suspend、Log Out、Shut Down、Restart）は `_buildSystemItems()` で静的に構築する。各アイテムは `displayName`、`searchKey`（複数キーワードを空白区切りで含む）、`icon`、`activate` を持つ。`activate` は `SystemActions.getDefault()` の各メソッドへの closure。Suspend は `suspend` または `sleep` で検索できる。
 
 根拠コード: `nuts-launcher@local/extension.js:263-288`, `nuts-launcher@local/extension.js:342-353`
 
@@ -171,12 +171,13 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - アプリ一覧は `enable()` 時にキャッシュするため、インストール/アンインストール後は extension reload が必要
 - multi-monitor 対応は primary monitor のみ
 - fuzzy search、最近使ったアプリ、使用頻度学習は未実装
-- システムアクションはアイテムとして表示されるが、実行時には GNOME Shell の確認ダイアログが出る（`SystemActions` の仕様）
+- システムアクションの実行時の確認や可用性は GNOME Shell の `SystemActions` に従う
 - USB ハブ経由で接続した HDD は、`drive.stop()` の成功後にハブが再接続し、自動で再マウントされて回転が止まらないことがある（Files でも同じ挙動）。issue #12 で対応を検討中
 
 ## 変更履歴（git log より自動生成）
 
-- d60276d feat(#16): open new windows with ctrl enter
+- f46c266 feat(#18): add suspend action to launcher
+- 33acfdf feat(#16): open new windows with ctrl enter (#17)
 - f394d7b fix(#14): activate running applications (#15)
 - f12a1c0 feat: add per-device eject commands to the launcher (#11)
 - ca4e986 fix(#9): restore launcher focus on GNOME 50 and install via symlink (#10)

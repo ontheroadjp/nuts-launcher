@@ -73,6 +73,7 @@ export default class NutsLauncherExtension extends Extension {
 |  [icon] Files                          |
 |  [icon] Settings                       |
 |  [icon] Eject HD-PCTU3_White           |
+|  [icon] Suspend                        |
 |  [icon] Log Out                        |
 |  [icon] Shut Down                      |
 |  [icon] Restart                        |
@@ -84,7 +85,7 @@ export default class NutsLauncherExtension extends Extension {
 - 各行にアイコン（St.Icon）とアイテム名を表示
 - 選択中の行が視覚的に区別できること
 - テーマ・設定 UI は不要
-- システムアクション（Log Out / Shut Down / Restart）はリスト末尾に常時表示
+- システムアクション（Suspend / Log Out / Shut Down / Restart）はリスト末尾に常時表示
 - 外付けデバイスが接続されている場合、デバイスごとに `Eject <名前>` をシステムアクションの直前に表示（デバイスがなければ表示しない）
 
 ## アプリ一覧取得とシステムアクション
@@ -104,7 +105,7 @@ const apps = Gio.AppInfo.get_all()
 - icon (`get_icon()`)
 - desktop id（取得できる場合: `get_id()`）
 
-システムアクション（Log Out / Shut Down / Restart）は `_buildSystemItems()` で静的に構築する。各アイテムは `displayName`・`searchKey`・`icon`・`activate` を持ち、`activate` は `SystemActions.getDefault()` の各メソッドへの closure。
+システムアクション（Suspend / Log Out / Shut Down / Restart）は `_buildSystemItems()` で静的に構築する。各アイテムは `displayName`・`searchKey`・`icon`・`activate` を持ち、`activate` は `SystemActions.getDefault()` の各メソッドへの closure。Suspend は `suspend` または `sleep` で検索できる。
 
 eject アイテムは `_buildEjectItems()` で `Show()` ごとに再構築する。`Gio.VolumeMonitor` の mount を drive 単位でまとめ、removable / ejectable / stoppable な drive だけを対象にする。
 
