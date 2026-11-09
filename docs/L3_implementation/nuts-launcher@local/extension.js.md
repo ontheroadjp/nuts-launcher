@@ -175,6 +175,7 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
+- e4e5d35 fix(#14): activate running applications
 - f12a1c0 feat: add per-device eject commands to the launcher (#11)
 - ca4e986 fix(#9): restore launcher focus on GNOME 50 and install via symlink (#10)
 - 918734f fix: allow global shortcuts through the launcher's modal keyboard grab
