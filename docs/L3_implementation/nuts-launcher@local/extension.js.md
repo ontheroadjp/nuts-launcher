@@ -96,7 +96,7 @@ eject アイテムとシステムアクションは eject → システムアク
 | `Down` / `Ctrl+j` | 選択を下へ移動 |
 | `Up` / `Ctrl+k` | 選択を上へ移動 |
 
-`_launchSelected()` はアイテムの種類を判別する。`activate` 関数を持つ場合（システムアクション、eject）はそれを呼ぶ。持たない場合（アプリ）は `item.info.launch([], null)` で起動する。起動成功・失敗にかかわらず launcher は閉じる。
+`_launchSelected()` は先に launcher を閉じて modal grab を解放し、アイテムの種類を判別する。`activate` 関数を持つ場合（システムアクション、eject）はそれを呼ぶ。アプリは desktop ID で `Shell.AppSystem` から検索し、見つかれば `Shell.App.activate()` で既存ウィンドウをアクティブにするか未起動アプリを起動する。見つからない場合は `item.info.launch([], null)` を使う。
 
 根拠コード: `nuts-launcher@local/extension.js:435-491`
 
@@ -157,6 +157,7 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - DBus 呼び出し元: `gdbus call`, wrapper script (`~/.local/bin/nuts-launcher-us`)
 - GNOME Shell UI: `Main.layoutManager.addTopChrome()` / `removeChrome()`, `Main.pushModal()` / `popModal()`
 - GNOME app list: `Gio.AppInfo.get_all()`
+- GNOME app activation: `Shell.AppSystem.get_default().lookup_app()` / `Shell.App.activate()`
 - GNOME system actions: `SystemActions.getDefault()` from `resource:///org/gnome/shell/misc/systemActions.js`
 - Removable devices: `Gio.VolumeMonitor`, `Gio.Drive.stop()` / `eject_with_operation()`, `ShellMountOperation` from `resource:///org/gnome/shell/ui/shellMountOperation.js`, `Main.notify()` / `Main.notifyError()`
 - UI toolkit: `St.BoxLayout`, `St.Entry`, `St.Icon`, `St.Label`
@@ -174,6 +175,7 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
+- e4e5d35 fix(#14): activate running applications
 - f12a1c0 feat: add per-device eject commands to the launcher (#11)
 - ca4e986 fix(#9): restore launcher focus on GNOME 50 and install via symlink (#10)
 - 918734f fix: allow global shortcuts through the launcher's modal keyboard grab

@@ -128,7 +128,7 @@ fuzzy search・使用頻度学習は後回し。
 | キー | 動作 |
 |------|------|
 | `Esc` | 閉じる（必須） |
-| `Enter` | 選択中のアプリを起動して閉じる（必須） |
+| `Enter` | launcher を閉じ、選択中のアプリをアクティブ化または起動する（必須） |
 | `Up` | 選択を上へ移動（必須） |
 | `Down` | 選択を下へ移動（必須） |
 | `Ctrl+j` | 下へ移動（できれば対応） |
@@ -141,18 +141,14 @@ fuzzy search・使用頻度学習は後回し。
 
 根拠: `nuts-launcher@local/extension.js`
 
-アプリの場合:
-```js
-item.info.launch([], null);
-```
+launcher を閉じて modal grab を解放した後、アプリの場合は desktop ID で `Shell.AppSystem` から取得したアプリを `activate()` する。起動済みなら既存ウィンドウをアクティブ化し、未起動なら起動する。取得できない場合は `item.info.launch([], null)` を使う。
 
 システムアクションの場合:
 ```js
 item.activate(); // SystemActions.getDefault().activateLogout()、_ejectDrive() 等
 ```
 
-- 起動後: launcher を閉じる
-- アプリ起動失敗時: GNOME Shell log に error を出して launcher を閉じる
+- アプリ起動失敗時: GNOME Shell log に error を出す
 - システムアクションは GNOME Shell の確認ダイアログを経由する
 - eject は `drive.stop()`（不可なら `drive.eject_with_operation()`）を `ShellMountOperation` 付きで実行し、結果を通知する
 

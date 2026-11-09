@@ -477,16 +477,21 @@ export default class NutsLauncherExtension extends Extension {
         if (!item)
             return;
 
+        this._hide();
+
         if (item.activate) {
             item.activate();
         } else {
             try {
-                item.info.launch([], null);
+                const id = item.info.get_id();
+                const app = id ? Shell.AppSystem.get_default().lookup_app(id) : null;
+                if (app)
+                    app.activate();
+                else
+                    item.info.launch([], null);
             } catch (e) {
                 console.error(`NutsLauncher: failed to launch ${item.displayName}:`, e);
             }
         }
-
-        this._hide();
     }
 }
