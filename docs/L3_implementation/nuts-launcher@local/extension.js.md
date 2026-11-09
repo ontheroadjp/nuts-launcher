@@ -99,7 +99,7 @@ eject アイテムとシステムアクションは eject → システムアク
 
 `_launchSelected()` は先に launcher を閉じて modal grab を解放し、アイテムの種類を判別する。`activate` 関数を持つ場合（システムアクション、eject）はそれを呼ぶ。アプリは desktop ID で `Shell.AppSystem` から検索し、通常は `Shell.App.activate()` で既存ウィンドウをアクティブにするか未起動アプリを起動する。Ctrl+Enter では GNOME Shell の New Window と同じ `open_new_window(-1)` を呼ぶ。アプリが見つからない場合は `item.info.launch([], null)` を使う。
 
-根拠コード: `nuts-launcher@local/extension.js:435-491`
+根拠コード: `nuts-launcher@local/extension.js:435-497`
 
 ## 重要な設計判断
 
@@ -176,7 +176,8 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
-- e4e5d35 fix(#14): activate running applications
+- d60276d feat(#16): open new windows with ctrl enter
+- f394d7b fix(#14): activate running applications (#15)
 - f12a1c0 feat: add per-device eject commands to the launcher (#11)
 - ca4e986 fix(#9): restore launcher focus on GNOME 50 and install via symlink (#10)
 - 918734f fix: allow global shortcuts through the launcher's modal keyboard grab

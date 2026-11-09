@@ -30,7 +30,7 @@ Ubuntu 24.04 LTS / GNOME Wayland 環境で、FEP/IME が US に切り替わっ�
 | DBus API | `Show()` / `Hide()` / `Toggle()` を提供 | `nuts-launcher@local/extension.js` |
 | アプリ一覧取得 | `Gio.AppInfo.get_all()` で取得、`should_show()` で絞り込み | `nuts-launcher@local/extension.js` |
 | インクリメンタル検索 | case-insensitive 部分一致、入力変更ごとに即時更新 | `nuts-launcher@local/extension.js` |
-| キーボード操作 | `Esc`/`Enter`/`Up`/`Down` | `nuts-launcher@local/extension.js` |
+| キーボード操作 | `Esc`/`Enter`/`Ctrl+Enter`/`Up`/`Down` | `nuts-launcher@local/extension.js` |
 | アプリ起動 | 起動済みなら既存ウィンドウをアクティブ化し、未起動なら起動 | `nuts-launcher@local/extension.js` |
 | 状態リセット | `Show()` 時に検索欄クリア + フォーカス | `nuts-launcher@local/extension.js` |
 
