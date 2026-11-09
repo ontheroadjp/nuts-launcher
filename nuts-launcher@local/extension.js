@@ -443,7 +443,7 @@ export default class NutsLauncherExtension extends Extension {
         }
 
         if (sym === Clutter.KEY_Return || sym === Clutter.KEY_KP_Enter) {
-            this._launchSelected();
+            this._launchSelected(ctrl);
             return Clutter.EVENT_STOP;
         }
 
@@ -472,7 +472,7 @@ export default class NutsLauncherExtension extends Extension {
 
     // --- Launch ---
 
-    _launchSelected() {
+    _launchSelected(newWindow = false) {
         const item = this._filteredApps[this._selectedIndex];
         if (!item)
             return;
@@ -485,9 +485,12 @@ export default class NutsLauncherExtension extends Extension {
             try {
                 const id = item.info.get_id();
                 const app = id ? Shell.AppSystem.get_default().lookup_app(id) : null;
-                if (app)
-                    app.activate();
-                else
+                if (app) {
+                    if (newWindow)
+                        app.open_new_window(-1);
+                    else
+                        app.activate();
+                } else
                     item.info.launch([], null);
             } catch (e) {
                 console.error(`NutsLauncher: failed to launch ${item.displayName}:`, e);

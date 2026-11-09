@@ -129,6 +129,7 @@ fuzzy search・使用頻度学習は後回し。
 |------|------|
 | `Esc` | 閉じる（必須） |
 | `Enter` | launcher を閉じ、選択中のアプリをアクティブ化または起動する（必須） |
+| `Ctrl+Enter` | 選択中のアプリに新しいウィンドウを要求する |
 | `Up` | 選択を上へ移動（必須） |
 | `Down` | 選択を下へ移動（必須） |
 | `Ctrl+j` | 下へ移動（できれば対応） |
@@ -141,7 +142,7 @@ fuzzy search・使用頻度学習は後回し。
 
 根拠: `nuts-launcher@local/extension.js`
 
-launcher を閉じて modal grab を解放した後、アプリの場合は desktop ID で `Shell.AppSystem` から取得したアプリを `activate()` する。起動済みなら既存ウィンドウをアクティブ化し、未起動なら起動する。取得できない場合は `item.info.launch([], null)` を使う。
+launcher を閉じて modal grab を解放した後、アプリの場合は desktop ID で `Shell.AppSystem` から取得したアプリを通常は `activate()` する。起動済みなら既存ウィンドウをアクティブ化し、未起動なら起動する。Ctrl+Enter では `open_new_window(-1)` を呼ぶ。取得できない場合は `item.info.launch([], null)` を使う。
 
 システムアクションの場合:
 ```js
