@@ -264,6 +264,13 @@ export default class NutsLauncherExtension extends Extension {
         const sa = SystemActions.getDefault();
         this._systemItems = [
             {
+                displayName: 'Suspend',
+                searchKey: 'suspend sleep',
+                desktopId: '',
+                icon: Gio.ThemedIcon.new('media-playback-pause-symbolic'),
+                activate: () => sa.activateSuspend(),
+            },
+            {
                 displayName: 'Log Out',
                 searchKey: 'log out logout',
                 desktopId: '',
