@@ -93,10 +93,11 @@ eject アイテムとシステムアクションは eject → システムアク
 | ---- | ---- |
 | `Esc` | `_hide()` |
 | `Enter` / `KP_Enter` | `_launchSelected()` |
+| `Ctrl+Enter` / `Ctrl+KP_Enter` | アプリに新しいウィンドウを要求 |
 | `Down` / `Ctrl+j` | 選択を下へ移動 |
 | `Up` / `Ctrl+k` | 選択を上へ移動 |
 
-`_launchSelected()` は先に launcher を閉じて modal grab を解放し、アイテムの種類を判別する。`activate` 関数を持つ場合（システムアクション、eject）はそれを呼ぶ。アプリは desktop ID で `Shell.AppSystem` から検索し、見つかれば `Shell.App.activate()` で既存ウィンドウをアクティブにするか未起動アプリを起動する。見つからない場合は `item.info.launch([], null)` を使う。
+`_launchSelected()` は先に launcher を閉じて modal grab を解放し、アイテムの種類を判別する。`activate` 関数を持つ場合（システムアクション、eject）はそれを呼ぶ。アプリは desktop ID で `Shell.AppSystem` から検索し、通常は `Shell.App.activate()` で既存ウィンドウをアクティブにするか未起動アプリを起動する。Ctrl+Enter では GNOME Shell の New Window と同じ `open_new_window(-1)` を呼ぶ。アプリが見つからない場合は `item.info.launch([], null)` を使う。
 
 根拠コード: `nuts-launcher@local/extension.js:435-491`
 
@@ -157,7 +158,7 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - DBus 呼び出し元: `gdbus call`, wrapper script (`~/.local/bin/nuts-launcher-us`)
 - GNOME Shell UI: `Main.layoutManager.addTopChrome()` / `removeChrome()`, `Main.pushModal()` / `popModal()`
 - GNOME app list: `Gio.AppInfo.get_all()`
-- GNOME app activation: `Shell.AppSystem.get_default().lookup_app()` / `Shell.App.activate()`
+- GNOME app activation: `Shell.AppSystem.get_default().lookup_app()` / `Shell.App.activate()` / `Shell.App.open_new_window()`
 - GNOME system actions: `SystemActions.getDefault()` from `resource:///org/gnome/shell/misc/systemActions.js`
 - Removable devices: `Gio.VolumeMonitor`, `Gio.Drive.stop()` / `eject_with_operation()`, `ShellMountOperation` from `resource:///org/gnome/shell/ui/shellMountOperation.js`, `Main.notify()` / `Main.notifyError()`
 - UI toolkit: `St.BoxLayout`, `St.Entry`, `St.Icon`, `St.Label`
