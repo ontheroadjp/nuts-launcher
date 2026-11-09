@@ -72,3 +72,9 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 - `Ctrl+j` / `Ctrl+k` キーバインド
 
 根拠: `nuts-launcher-local-issue.md:281-285`, `nuts-launcher-local-issue.md:297-299`
+
+### GNOME Shell 46 と 50 をサポートする
+
+GNOME Shell 46 と 50 を単一のコードでサポートする。両 version で API が異なる場合は、version 番号ではなく API の有無を確認して処理を分岐する。
+
+根拠: `docs/L3_implementation/nuts-launcher@local/extension.js.md:110-114`
