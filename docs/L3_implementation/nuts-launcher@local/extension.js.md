@@ -176,7 +176,8 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
-- d60276d feat(#16): open new windows with ctrl enter
+- f46c266 feat(#18): add suspend action to launcher
+- 33acfdf feat(#16): open new windows with ctrl enter (#17)
 - f394d7b fix(#14): activate running applications (#15)
 - f12a1c0 feat: add per-device eject commands to the launcher (#11)
 - ca4e986 fix(#9): restore launcher focus on GNOME 50 and install via symlink (#10)
