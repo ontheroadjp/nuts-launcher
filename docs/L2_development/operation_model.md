@@ -14,7 +14,7 @@
 gnome-shell --version
 ```
 
-`metadata.json` の `shell-version` フィールドと一致させること。
+`install.sh` は `metadata.json` の `shell-version` フィールドと照合し、未対応または判定不能の場合は変更前に停止する。
 
 根拠: `nuts-launcher@local/metadata.json`, `README.md`
 
@@ -103,26 +103,9 @@ gdbus call --session \
 
 ## wrapper script
 
-FepSwitcher → NutsLauncher.Show() の順番制御は wrapper script で行う。
+FepSwitcher → NutsLauncher.Toggle() の順番制御は wrapper script で行う。FepSwitcher の呼び出しが失敗しても Toggle を試みる。
 
-ファイル: `~/.local/bin/trigger-nuts-launcher`（`install.sh` 実行時に `scripts/trigger-nuts-launcher` への symlink として自動配置される）
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-gdbus call --session \
-  --dest org.gnome.Shell.Extensions.FepSwitcher \
-  --object-path /org/gnome/Shell/Extensions/FepSwitcher \
-  --method org.gnome.Shell.Extensions.FepSwitcher.SwitchToUs >/dev/null
-
-sleep 0.05
-
-gdbus call --session \
-  --dest org.gnome.Shell.Extensions.NutsLauncher \
-  --object-path /org/gnome/Shell/Extensions/NutsLauncher \
-  --method org.gnome.Shell.Extensions.NutsLauncher.Show >/dev/null
-```
+ファイル: `~/.local/bin/trigger-nuts-launcher`（`install.sh` 実行時に `scripts/trigger-nuts-launcher` への symlink として配置される）。実際のコマンドは `scripts/trigger-nuts-launcher` を参照する。
 
 注意: GNOME custom shortcut で command を指定する場合、`$HOME` が展開されない可能性があるため絶対パスを使う。
 
@@ -130,6 +113,6 @@ gdbus call --session \
 
 ## GNOME custom shortcut への割り当て
 
-`./install.sh` 実行時に `setup_shortcut()` が自動で行う（`<Control><Shift>space` を `~/.local/bin/trigger-nuts-launcher` に割り当て）。再実行しても重複登録されない。既存の他 custom shortcut と binding が衝突する場合は自動登録をスキップし、手動での割り当てを促す。
+`./install.sh` 実行時に `setup_shortcut()` が自動で行う（`<Control><Shift>space` を `~/.local/bin/trigger-nuts-launcher` に割り当て）。既存の wrapper 用 shortcut があれば変更せず、逐次再実行でも重複登録しない。既存の他 custom shortcut と binding が衝突する場合は自動登録をスキップし、エラーと手動での割り当てを案内する。組み込み shortcut や同時実行の競合は検査しない。
 
 根拠: `install.sh`, `docs/L3_implementation/nuts-launcher@local/install.sh.md`

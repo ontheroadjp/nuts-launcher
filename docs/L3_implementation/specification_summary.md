@@ -198,9 +198,9 @@ signal handler を disconnect する
 
 根拠: `README.md`
 
-ファイル: `~/.local/bin/nuts-launcher-us`
+ファイル: `~/.local/bin/trigger-nuts-launcher`
 
-FepSwitcher.SwitchToUs() を呼んだ後、`sleep 0.05` を挟んで NutsLauncher.Show() を呼ぶ。GNOME custom shortcut にはこの script を絶対パスで指定する。
+FepSwitcher.SwitchToUs() を呼んだ後、`sleep 0.05` を挟んで NutsLauncher.Toggle() を呼ぶ。FepSwitcher の呼び出しが失敗しても Toggle を試みる。GNOME custom shortcut にはこの script を絶対パスで指定する。
 
 ## やらないこと
 
