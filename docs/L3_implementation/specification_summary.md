@@ -84,6 +84,7 @@ export default class NutsLauncherExtension extends Extension {
 - 検索入力欄 + 検索結果一覧
 - 各行にアイコン（St.Icon）とアイテム名を表示
 - 選択中の行が視覚的に区別できること
+- ランチャーの外側をクリックすると閉じる
 - テーマ・設定 UI は不要
 - システムアクション（Suspend / Log Out / Shut Down / Restart）はリスト末尾に常時表示
 - 外付けデバイスが接続されている場合、デバイスごとに `Eject <名前>` をシステムアクションの直前に表示（デバイスがなければ表示しない）

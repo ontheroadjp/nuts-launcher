@@ -178,7 +178,8 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
-- f46c266 feat(#18): add suspend action to launcher
+- 154bcac feat(#20): close launcher on outside click
+- c62eadf feat(#18): add suspend action to launcher (#19)
 - 33acfdf feat(#16): open new windows with ctrl enter (#17)
 - f394d7b fix(#14): activate running applications (#15)
 - f12a1c0 feat: add per-device eject commands to the launcher (#11)
