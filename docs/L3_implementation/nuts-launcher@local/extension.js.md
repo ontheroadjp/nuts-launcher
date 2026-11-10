@@ -54,9 +54,11 @@ disable()
 
 UI は `St.BoxLayout` の root、`St.Entry`、結果一覧用 `St.BoxLayout` で構成する。検索入力の `text-changed` とキー操作の `key-press-event` は entry の `ClutterText` に接続する。
 
+root の `captured-event` はボタン押下の座標を root の表示領域と比較する。外側なら `_hide()` で閉じて modal grab を解放し、内側ならイベントを通常どおり伝播する。handler は root の破棄時に解放される。
+
 キー操作は entry の `key-press-event` に限定し、global stage の `captured-event` は使わない。global stage handler は cleanup 失敗時に Shell 全体へ残るリスクがあるため。
 
-根拠コード: `nuts-launcher@local/extension.js:106-138`
+根拠コード: `nuts-launcher@local/extension.js:106-151`, `nuts-launcher@local/extension.js:154-170`
 
 ### アプリ一覧とシステムアクション
 

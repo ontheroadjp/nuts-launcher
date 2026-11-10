@@ -110,6 +110,20 @@ export default class NutsLauncherExtension extends Extension {
             reactive: true,
         });
 
+        this._mainBox.connect('captured-event', (_, event) => {
+            if (event.type() !== Clutter.EventType.BUTTON_PRESS)
+                return Clutter.EVENT_PROPAGATE;
+
+            const [x, y] = event.get_coords();
+            const [boxX, boxY] = this._mainBox.get_transformed_position();
+            const [width, height] = this._mainBox.get_transformed_size();
+            if (x >= boxX && x < boxX + width && y >= boxY && y < boxY + height)
+                return Clutter.EVENT_PROPAGATE;
+
+            this._hide();
+            return Clutter.EVENT_STOP;
+        });
+
         this._entry = new St.Entry({
             style_class: 'nuts-launcher-entry',
             hint_text: 'Search applications...',
