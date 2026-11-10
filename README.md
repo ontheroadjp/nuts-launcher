@@ -21,7 +21,9 @@ Minimal GNOME application launcher with DBus control for Ubuntu 24.04 LTS / GNOM
 
 This symlinks `~/.local/share/gnome-shell/extensions/nuts-launcher@local` to the repo's `nuts-launcher@local/` and enables the extension. Code changes in the repo take effect after the next GNOME Shell reload (log out and back in on Wayland) without reinstalling.
 
-> **Note:** The extension targets GNOME Shell 46 and 50 (`shell-version: ["46", "50"]`). Confirm with `gnome-shell --version` before installing on a different version.
+The installer checks the installed GNOME Shell against `metadata.json` before making changes and stops if its version is unsupported or cannot be determined. It requires `gnome-shell`, `gnome-extensions`, and `gjs`.
+
+Existing files or unrelated symlinks at the extension and wrapper destinations are preserved; move them aside before retrying. Re-running preserves an existing shortcut for the wrapper. If enabling fails, check the displayed error; if Shell has not discovered the extension, log out and back in, then run `gnome-extensions enable nuts-launcher@local` and rerun the installer to finish shortcut setup. Shortcut setup failures are reported and can be retried. Conflicts with GNOME built-in shortcuts are not checked. FepSwitcher is a separate extension; if its DBus service is unavailable, the installer warns that input switching may not work.
 
 **Manual steps (alternative):**
 
@@ -62,24 +64,7 @@ journalctl --user -f /usr/bin/gnome-shell
 
 ### FEP integration (wrapper script)
 
-`./install.sh` automatically symlinks this script to `~/.local/bin/trigger-nuts-launcher` and registers it as a GNOME custom shortcut (`Ctrl+Shift+Space`). The script itself:
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-gdbus call --session \
-  --dest org.gnome.Shell.Extensions.FepSwitcher \
-  --object-path /org/gnome/Shell/Extensions/FepSwitcher \
-  --method org.gnome.Shell.Extensions.FepSwitcher.SwitchToUs >/dev/null
-
-sleep 0.05
-
-gdbus call --session \
-  --dest org.gnome.Shell.Extensions.NutsLauncher \
-  --object-path /org/gnome/Shell/Extensions/NutsLauncher \
-  --method org.gnome.Shell.Extensions.NutsLauncher.Show >/dev/null
-```
+`./install.sh` automatically symlinks this script to `~/.local/bin/trigger-nuts-launcher` and registers it as a GNOME custom shortcut (`Ctrl+Shift+Space`). The script calls `FepSwitcher.SwitchToUs`, waits briefly, and then calls `NutsLauncher.Toggle`. If FepSwitcher is unavailable, the script still attempts to toggle the launcher. See [`scripts/trigger-nuts-launcher`](scripts/trigger-nuts-launcher) for the actual commands.
 
 ## Design Principles
 
