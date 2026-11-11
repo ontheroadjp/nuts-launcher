@@ -76,11 +76,17 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 
 根拠コード: `nuts-launcher@local/extension.js:290-340`
 
+### 起動中アプリの強制終了
+
+`_show()` ごとに `Shell.AppSystem.get_running()` から `Force Quit <名前>` 項目を作る。GNOME Shell がウィンドウを把握しているアプリが対象で、`force quit` とアプリ名で検索できる。選択時はその時点の `app.get_windows()` を取得し、各ウィンドウに `kill()` を呼ぶ。終了済みでウィンドウがなければ何もしない。例外はログと通知で報告し、残りのウィンドウの処理を続ける。未保存データは失われ得る。
+
+根拠コード: `nuts-launcher@local/extension.js:195-197`, `nuts-launcher@local/extension.js:280-302`
+
 ### 検索・結果表示
 
 検索は display name と desktop id の case-insensitive 部分一致。表示件数は `MAX_RESULTS`（10）に制限する。
 
-eject アイテムとシステムアクションは eject → システムアクションの順に連結し（以下 `systemItems`）、まとめて扱う。
+強制終了、eject、システムアクションの順に連結し（以下 `systemItems`）、まとめて扱う。
 
 クエリが空の場合: 先頭 `Math.max(0, MAX_RESULTS - systemItems.length)` 件のアプリ + 全 `systemItems` を末尾に配置する。
 クエリがある場合: マッチしたアプリ + マッチした `systemItems` を結合し、最大 `MAX_RESULTS` 件に切り詰める。システムアクションの `searchKey` には "logout"、"shutdown"、"power off"、"reboot" 等の複数キーワードを含んでいる。
