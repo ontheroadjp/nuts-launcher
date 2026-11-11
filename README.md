@@ -7,6 +7,7 @@ Minimal GNOME application launcher with DBus control for Ubuntu 24.04 LTS / GNOM
 - DBus API (`Show()` / `Hide()` / `Toggle()`) for external control
 - Incremental search (case-insensitive substring match)
 - App icon + name display using `Gio.AppInfo`
+- Force Quit commands: one `Force Quit <name>` item per running application with a window; searchable by `force quit` or application name. Unsaved work may be lost.
 - System actions: Suspend, Log Out, Shut Down, Restart (always shown at the bottom; searchable)
 - Eject commands: one `Eject <name>` item per connected external drive (e.g. USB HDD), shown above the system actions; hidden when no device is connected; searchable by `eject` / `unmount` / `remove` / device name
 - Keyboard navigation: `Enter` to launch, `Ctrl+Enter` to request a new window, `Esc` to close, `Up`/`Down` to select

@@ -110,6 +110,8 @@ const apps = Gio.AppInfo.get_all()
 
 eject アイテムは `_buildEjectItems()` で `Show()` ごとに再構築する。`Gio.VolumeMonitor` の mount を drive 単位でまとめ、removable / ejectable / stoppable な drive だけを対象にする。
 
+強制終了アイテムは `Show()` ごとに `Shell.AppSystem.get_running()` から作る。GNOME Shell がウィンドウを把握する起動中アプリごとに `Force Quit <名前>` を表示する。
+
 ## インクリメンタル検索
 
 根拠: `nuts-launcher@local/extension.js`
@@ -117,9 +119,8 @@ eject アイテムは `_buildEjectItems()` で `Show()` ごとに再構築する
 - 入力変更ごとに即時更新
 - case-insensitive 部分一致
 - 検索対象: display name, app name, desktop id
-- 入力が空の場合: 先頭 N 件のアプリ + 全 eject アイテム・全システムアクションを末尾に表示（合計 MAX_RESULTS = 10）
-- 入力がある場合: 部分一致するアプリ + 部分一致する eject アイテム・システムアクションを表示（eject は `eject` / `unmount` / `remove` / デバイス名で検索可）
-- 最大表示件数: 10 件
+- 入力が空の場合: 表示枠に収まるアプリ + 全強制終了・eject・システムアクションを末尾に表示（アクションだけで 10 件を超える場合は全件表示）
+- 入力がある場合: 部分一致するアプリ、強制終了、eject、システムアクションを最大 10 件表示。強制終了は `force quit` / アプリ名で検索可
 
 fuzzy search・使用頻度学習は後回し。
 
@@ -154,6 +155,7 @@ item.activate(); // SystemActions.getDefault().activateLogout()、_ejectDrive() 
 - アプリ起動失敗時: GNOME Shell log に error を出す
 - システムアクションは GNOME Shell の確認ダイアログを経由する
 - eject は `drive.stop()`（不可なら `drive.eject_with_operation()`）を `ShellMountOperation` 付きで実行し、結果を通知する
+- 強制終了は選択時に対象アプリの現在のウィンドウごとに `kill()` を呼び、例外はログと通知で報告する。未保存データは失われ得る
 
 ## Show() 時の状態リセット
 
