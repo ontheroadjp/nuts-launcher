@@ -17,7 +17,12 @@ function fixture() {
         bus_unown_name: id => calls.push(['unown', id]) };
     const Main = { popModal: grab => calls.push(['pop', grab]),
         layoutManager: { removeChrome: box => calls.push(['remove', box]) } };
-    const GLib = { source_remove: id => calls.push(['cancel', id]) };
+    const GLib = { source_remove: id => calls.push(['cancel', id]), UriFlags: { NONE: 0 },
+        Uri: { parse: value => {
+            if (/%(?![\da-f]{2})/i.test(value)) throw new Error('Invalid escape');
+            const uri = new URL(value);
+            return { get_host: () => uri.hostname };
+        } } };
     const Shell = { AppSystem: { get_default: () => appSystem } };
     const source = fs.readFileSync(path.join(__dirname, '../nuts-launcher@local/extension.js'), 'utf8')
         .replace(/^import .*;\s*$/gm, '')
@@ -31,7 +36,9 @@ function fixture() {
     launcher._ejectItems = [];
     launcher._systemItems = [];
     launcher._webSearchItem = { displayName: 'Web Search...' };
+    launcher._openUrlItem = { displayName: 'Open URL...' };
     launcher._webSearchMode = false;
+    launcher._urlMode = false;
     launcher._rows = [];
     launcher._renderResults = () => {};
     launcher._highlightSelected = () => {};
@@ -89,6 +96,70 @@ test('empty search displays only web search', () => {
     launcher._updateResults('');
     assert.equal(launcher._filteredApps.length, 1);
     assert.equal(launcher._filteredApps[0].displayName, 'Web Search...');
+});
+
+test('valid web URLs are first and open directly while web search remains available', () => {
+    const { launcher, Gio } = fixture();
+    const calls = [];
+    let query = 'https://example.com/path?q=hello';
+    launcher._entry = { get_text: () => query };
+    launcher._hide = () => calls.push('hide');
+    Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
+    launcher._updateResults(query);
+    assert.equal(launcher._filteredApps[0].displayName, `Open URL: ${query}`);
+    assert.equal(launcher._filteredApps.at(-1), launcher._webSearchItem);
+    launcher._launchSelected();
+    assert.deepEqual(calls, ['hide', query]);
+    query = 'http://example.com';
+    launcher._webSearchMode = true;
+    launcher._updateResults(query);
+    assert.equal(launcher._selectedIndex, 0);
+    assert.equal(launcher._filteredApps[0].url, query);
+    launcher._selectedIndex = 1;
+    launcher._launchSelected();
+    assert.equal(calls.at(-1), 'https://www.google.com/search?q=http%3A%2F%2Fexample.com');
+});
+
+test('invalid URLs and other schemes remain ordinary searches', () => {
+    const { launcher } = fixture();
+    for (const query of ['https://', 'https://example.com/%zz', 'https://a b', 'file:///etc/passwd', 'example.com']) {
+        launcher._updateResults(query);
+        assert.equal(launcher._filteredApps[0], launcher._webSearchItem, query);
+    }
+});
+
+test('h finds Open URL and URL mode opens addresses with or without a scheme', () => {
+    const { launcher, Gio } = fixture();
+    const calls = [];
+    let query = 'h';
+    launcher._entry = { get_text: () => query, set_text: value => { query = value; launcher._onSearchChanged(); },
+        grab_key_focus: () => calls.push('focus') };
+    launcher._hide = () => { launcher._urlMode = false; calls.push('hide'); };
+    Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
+    launcher._updateResults(query);
+    launcher._selectedIndex = launcher._filteredApps.indexOf(launcher._openUrlItem);
+    assert.notEqual(launcher._selectedIndex, -1);
+    launcher._launchSelected();
+    assert.equal(query, '');
+    assert.equal(launcher._entry.hint_text, 'URL 入力');
+    query = 'example.com/path';
+    launcher._onSearchChanged();
+    launcher._launchSelected();
+    assert.deepEqual(calls, ['focus', 'hide', 'https://example.com/path']);
+    launcher._urlMode = true;
+    query = 'http://example.com';
+    launcher._onSearchChanged();
+    launcher._launchSelected();
+    assert.equal(calls.at(-1), query);
+});
+
+test('URL mode does not launch invalid input or unsupported schemes', () => {
+    const { launcher } = fixture();
+    launcher._urlMode = true;
+    for (const query of ['', 'https://', 'example.com/%zz', 'a b', 'file:///etc/passwd']) {
+        launcher._updateResults(query);
+        assert.equal(launcher._filteredApps[0], launcher._openUrlItem, query);
+    }
 });
 
 test('web search stays selected after empty activation and opens an encoded query', () => {

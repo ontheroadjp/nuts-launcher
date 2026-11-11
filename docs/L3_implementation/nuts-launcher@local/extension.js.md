@@ -90,6 +90,8 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 
 クエリが空の場合は Web Search のみ表示する。クエリがある場合は一致したアプリと `systemItems` を最大 9 件表示し、Web Search を末尾に追加する。Web 検索モードでは Web Search のみ表示する。
 
+HTTP / HTTPS URL は検証後に先頭の Open URL 項目として表示する。`open url`、`http`、`https` に一致する検索文字列では Open URL の入力モードへの入口も表示する。入力モードでは URL にスキームがなければ `https://` を補い、有効な URL を先頭に表示する。空欄・無効な URL・他のスキームは開かない。検索結果は Web Search の枠を含め最大 10 件とする。
+
 検索結果は入力変更ごとに作り直す。各行は icon、label、button press handler を持ち、クリック時は選択 index を更新して起動する。
 
 根拠コード: `nuts-launcher@local/extension.js:357-422`
@@ -105,6 +107,8 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 | `Up` / `Ctrl+k` | 選択を上へ移動 |
 
 `_launchSelected()` は Web Search を空欄または項目名の部分一致で選ぶと、入力欄を消去して Web 検索モードに切り替える。それ以外の検索語では launcher を閉じ、エンコードした検索語を含む Google 検索 URI を既定のブラウザで開く。Web 検索モードでは入力後の Enter で検索する。アプリやアクションの起動時も先に launcher を閉じて modal grab を解放する。アプリは desktop ID で `Shell.AppSystem` から検索し、通常は `Shell.App.activate()`、Ctrl+Enter では `open_new_window(-1)` を呼ぶ。アプリが見つからない場合は `item.info.launch([], null)` を使う。
+
+Open URL の入口を選ぶと入力欄を消去して URL 入力モードに切り替える。有効な URL 項目を選ぶと launcher を閉じて既定のブラウザで開き、失敗時はログと通知で報告する。表示・非表示時にモードをリセットする。
 
 Enter は `ClutterText::activate` で処理し、入力メソッドによる変換確定を優先する。Ctrl の状態は現在のイベントから取得する。
 
