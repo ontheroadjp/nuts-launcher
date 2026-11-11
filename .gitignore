@@ -1,4 +1,6 @@
 DS_Store
+__pycache__/
+*.py[cod]
 # core-toolkit-for-claude (install.sh)
 .claude/commands/
 .claude/hooks/
