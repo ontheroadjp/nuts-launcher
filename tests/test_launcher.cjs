@@ -98,6 +98,47 @@ test('empty search displays only web search', () => {
     assert.equal(launcher._filteredApps[0].displayName, 'Web Search...');
 });
 
+test('calculator respects precedence, parentheses, signs and decimals', () => {
+    const { launcher } = fixture();
+    for (const [query, expected] of [['1+2*3', '7'], ['(1+2)*3', '9'],
+        ['-2.5 + .5', '-2'], ['8/2/2', '2']]) {
+        launcher._updateResults(query);
+        assert.equal(launcher._filteredApps[0].displayName, `= ${expected}`);
+    }
+});
+
+test('calculator rejects malformed, non-finite and unsafe expressions', () => {
+    const { launcher } = fixture();
+    for (const query of ['1+', '1/0', '0/0', '1e309+1', '2(3+4)',
+        '1+alert(1)', '('.repeat(101) + '1+2' + ')'.repeat(101)]) {
+        launcher._updateResults(query);
+        assert.equal(launcher._filteredApps[0], launcher._webSearchItem, query);
+    }
+});
+
+test('calculator copies the result and preserves search modes and result limit', () => {
+    const { launcher, context } = fixture();
+    const calls = [];
+    context.St.ClipboardType = { CLIPBOARD: 'clipboard' };
+    context.St.Clipboard = { get_default: () => ({ set_text: (...args) => calls.push(args) }) };
+    launcher._hide = () => calls.push('hide');
+    launcher._apps = Array.from({ length: 12 }, (_, i) => ({
+        displayName: `1+2 ${i}`, searchKey: `1+2 ${i}`, desktopId: '',
+    }));
+    launcher._updateResults('1+2');
+    assert.equal(launcher._filteredApps.length, 10);
+    assert.equal(launcher._filteredApps.at(-1), launcher._webSearchItem);
+    launcher._launchSelected();
+    assert.deepEqual(calls, ['hide', ['clipboard', '3']]);
+    launcher._webSearchMode = true;
+    launcher._updateResults('1+2');
+    assert.equal(launcher._filteredApps[0], launcher._webSearchItem);
+    launcher._webSearchMode = false;
+    launcher._urlMode = true;
+    launcher._updateResults('1+2');
+    assert.equal(launcher._filteredApps[0].url, 'https://1+2');
+});
+
 test('valid web URLs are first and open directly while web search remains available', () => {
     const { launcher, Gio } = fixture();
     const calls = [];

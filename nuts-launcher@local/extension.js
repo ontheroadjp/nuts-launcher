@@ -22,6 +22,65 @@ const OBJECT_PATH = '/org/gnome/Shell/Extensions/NutsLauncher';
 const MAX_RESULTS = 10;
 const SHOW_GRAB_DELAY_MS = 120;
 
+// Parse only arithmetic, without evaluating the input as JavaScript.
+function calculate(query) {
+    if (query.length > 512 || !/[+*/-]/.test(query))
+        return null;
+    const tokens = query.match(/(?:\d+(?:\.\d*)?|\.\d+)|[()+*/-]|\s+|./g) ?? [];
+    const parts = tokens.filter(token => !/^\s+$/.test(token));
+    let index = 0;
+    let depth = 0;
+
+    function primary() {
+        if (++depth > 100)
+            throw new Error('Expression too deeply nested');
+        let value;
+        const token = parts[index++];
+        if (token === '+' || token === '-') {
+            value = primary();
+            if (token === '-') value = -value;
+        } else if (token === '(') {
+            value = expression();
+            if (parts[index++] !== ')') throw new Error('Missing parenthesis');
+        } else if (token && /^(?:\d+(?:\.\d*)?|\.\d+)$/.test(token)) {
+            value = Number(token);
+        } else {
+            throw new Error('Invalid expression');
+        }
+        depth--;
+        return value;
+    }
+
+    function term() {
+        let value = primary();
+        while (parts[index] === '*' || parts[index] === '/') {
+            const operator = parts[index++];
+            const right = primary();
+            if (operator === '/' && right === 0) throw new Error('Division by zero');
+            value = operator === '*' ? value * right : value / right;
+        }
+        return value;
+    }
+
+    function expression() {
+        let value = term();
+        while (parts[index] === '+' || parts[index] === '-') {
+            const operator = parts[index++];
+            const right = term();
+            value = operator === '+' ? value + right : value - right;
+        }
+        return value;
+    }
+
+    try {
+        const result = expression();
+        return index === parts.length && Number.isFinite(result) ? String(result) : null;
+    } catch (e) {
+        // Invalid or incomplete input remains an ordinary search query.
+        return null;
+    }
+}
+
 export default class NutsLauncherExtension extends Extension {
     enable() {
         this._visible = false;
@@ -496,6 +555,15 @@ export default class NutsLauncherExtension extends Extension {
             if (results.length === MAX_RESULTS)
                 results.splice(MAX_RESULTS - 2, 1);
             results.unshift(urlItem);
+        }
+        if (!this._urlMode && !this._webSearchMode) {
+            const result = calculate(query);
+            if (result !== null) {
+                if (results.length === MAX_RESULTS)
+                    results.splice(MAX_RESULTS - 2, 1);
+                results.unshift({ displayName: `= ${result}`, icon: Gio.ThemedIcon.new('accessories-calculator-symbolic'),
+                    activate: () => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, result) });
+            }
         }
         return results;
     }
