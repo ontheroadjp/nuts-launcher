@@ -198,9 +198,11 @@ signal handler を disconnect する
 
 FepSwitcher.SwitchToUs() を呼んだ後、`sleep 0.05` を挟んで NutsLauncher.Toggle() を呼ぶ。FepSwitcher の呼び出しが失敗しても Toggle を試みる。GNOME custom shortcut にはこの script を絶対パスで指定する。
 
-## やらないこと
+## 現在の対象外
 
-根拠: `docs/L0_concept/policy.md`
+根拠: `README.md`、`nuts-launcher@local/extension.js`
+
+以下は現在の実装に含まれない機能・連携であり、L0 による一律の禁止を意味しない。
 
 - Search Light 互換 API
 - `ydotool` integration
