@@ -41,7 +41,7 @@ gnome-extensions enable nuts-launcher@local
 gnome-extensions disable nuts-launcher@local
 ```
 
-根拠: `README.md`
+根拠: `docs/.ai/repo.profile.json` の `commands.disable`
 
 ## リロード（変更後の反映）
 
@@ -79,7 +79,7 @@ gdbus call --session \
   --method org.gnome.Shell.Extensions.NutsLauncher.Hide
 ```
 
-根拠: `README.md`
+根拠: `nuts-launcher@local/extension.js:11-18`, `docs/.ai/repo.profile.json` の `commands.dbus_hide`
 
 ### Toggle（切り替え）
 
@@ -90,7 +90,7 @@ gdbus call --session \
   --method org.gnome.Shell.Extensions.NutsLauncher.Toggle
 ```
 
-根拠: `README.md`
+根拠: `nuts-launcher@local/extension.js:11-18`, `docs/.ai/repo.profile.json` の `commands.dbus_toggle`
 
 ## wrapper script
 

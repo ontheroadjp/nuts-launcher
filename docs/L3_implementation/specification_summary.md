@@ -72,14 +72,14 @@ export default class NutsLauncherExtension extends Extension {
 +----------------------------------------+
 ```
 
-- 画面中央（primary monitor）に表示
+- primary monitor の水平方向中央、垂直方向は上から約 1/3 の位置に表示（`nuts-launcher@local/extension.js:294-304`）
 - 検索入力欄 + 検索結果一覧
 - 各行にアイコン（St.Icon）とアイテム名を表示
 - 選択中の行が視覚的に区別できること
 - ランチャーの外側をクリックすると閉じる
 - テーマ・設定 UI は不要
 - システムアクションと接続中デバイスの eject は検索文字列に一致した場合に表示する
-- Web Search は検索文字列にかかわらず表示する
+- 通常の検索モードでは Web Search を表示する。URL 入力モードでは Open URL を表示する
 - HTTP / HTTPS URL は Open URL として先頭に表示する。Open URL 入力モードへの入口は `open url`、`http`、`https` に一致する検索で表示する
 
 ## アプリ一覧取得とシステムアクション
@@ -118,7 +118,7 @@ eject アイテムは `_buildEjectItems()` で `Show()` ごとに再構築する
 - Open URL を選ぶと URL 入力モードへ切り替え、スキームを省略した入力には `https://` を補う。有効な URL を選択すると既定のブラウザで開く。空欄、無効な URL、HTTP / HTTPS 以外のスキームは開かない
 - Enter は入力メソッドによる変換確定を優先する
 
-fuzzy search・使用頻度学習は後回し。
+fuzzy search・使用頻度学習は実装されていない。
 
 ## キーボード操作
 
@@ -149,7 +149,7 @@ item.activate(); // SystemActions.getDefault().activateLogout()、_ejectDrive() 
 ```
 
 - アプリ起動失敗時: GNOME Shell log に error を出す
-- システムアクションは GNOME Shell の確認ダイアログを経由する
+- システムアクションは GNOME Shell の `SystemActions` に委ねる。確認ダイアログや可用性は実機で確認する
 - eject は `drive.stop()`（不可なら `drive.eject_with_operation()`）を `ShellMountOperation` 付きで実行し、結果を通知する
 - 強制終了は選択時に対象アプリの現在のウィンドウごとに `kill()` を呼び、例外はログと通知で報告する。未保存データは失われ得る
 
@@ -159,7 +159,7 @@ item.activate(); // SystemActions.getDefault().activateLogout()、_ejectDrive() 
 
 - 検索文字列を空にする
 - 選択 index を 0 に戻す
-- アプリ一覧を refresh する（または enable 時キャッシュを使用）
+- アプリ一覧は enable 時のキャッシュを使用する
 - 検索欄に focus する
 
 ## フォーカス制御

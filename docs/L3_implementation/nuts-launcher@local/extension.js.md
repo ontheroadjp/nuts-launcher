@@ -4,7 +4,7 @@
 
 GNOME Shell extension `nuts-launcher@local` のメイン実装。DBus サービス、ランチャー UI、アプリ一覧取得、システムアクション（suspend/logout/shutdown/restart）、外付けデバイスの eject、インクリメンタル検索、キーボード操作、アイテム起動をこのファイルにまとめている。
 
-根拠コード: `nuts-launcher@local/extension.js:1-492`
+根拠コード: `nuts-launcher@local/extension.js:1-658`
 
 ## 動作の概要
 
@@ -28,7 +28,7 @@ disable()
   -> _destroyUI()
 ```
 
-根拠コード: `nuts-launcher@local/extension.js:26-52`, `nuts-launcher@local/extension.js:93-102`, `nuts-launcher@local/extension.js:140-160`
+根拠コード: `nuts-launcher@local/extension.js:26-65`, `nuts-launcher@local/extension.js:107-115`, `nuts-launcher@local/extension.js:174-198`
 
 ### DBus API
 
@@ -40,7 +40,7 @@ disable()
 | `Hide()` | idle callback で `_hide()` を実行する |
 | `Toggle()` | 表示中なら `_hide()`、非表示なら `_queueShow()` |
 
-根拠コード: `nuts-launcher@local/extension.js:11-21`, `nuts-launcher@local/extension.js:56-91`
+根拠コード: `nuts-launcher@local/extension.js:11-21`, `nuts-launcher@local/extension.js:69-104`
 
 ### 表示・フォーカス
 
@@ -48,7 +48,7 @@ disable()
 
 `_show()` は eject アイテムを再構築（`_buildEjectItems()`）し、検索欄を空にし、選択 index を 0 に戻し、結果を再描画してから UI を表示する。その後 `Main.pushModal()` で modal grab を取得し、`_hasKeyboardGrab()` が keyboard grab の取得を確認できた場合だけ entry に `grab_key_focus()` する。取得できなかった場合は grab を pop して UI を隠す。
 
-根拠コード: `nuts-launcher@local/extension.js:162-196`, `nuts-launcher@local/extension.js:205-236`
+根拠コード: `nuts-launcher@local/extension.js:200-237`, `nuts-launcher@local/extension.js:249-280`
 
 ### UI と signal
 
@@ -58,7 +58,7 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 
 キー操作は entry の `key-press-event` に限定し、global stage の `captured-event` は使わない。global stage handler は cleanup 失敗時に Shell 全体へ残るリスクがあるため。
 
-根拠コード: `nuts-launcher@local/extension.js:106-151`, `nuts-launcher@local/extension.js:154-170`
+根拠コード: `nuts-launcher@local/extension.js:120-171`, `nuts-launcher@local/extension.js:174-198`
 
 ### アプリ一覧とシステムアクション
 
@@ -66,35 +66,35 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 
 システムアクション（Suspend、Log Out、Shut Down、Restart）は `_buildSystemItems()` で静的に構築する。各アイテムは `displayName`、`searchKey`（複数キーワードを空白区切りで含む）、`icon`、`activate` を持つ。`activate` は `SystemActions.getDefault()` の各メソッドへの closure。Suspend は `suspend` または `sleep` で検索できる。
 
-根拠コード: `nuts-launcher@local/extension.js:263-288`, `nuts-launcher@local/extension.js:342-353`
+根拠コード: `nuts-launcher@local/extension.js:340-372`, `nuts-launcher@local/extension.js:426-437`
 
 ### 外付けデバイスの eject
 
 `_buildEjectItems()` は `Gio.VolumeMonitor.get().get_mounts()` から mount を集め、drive ごとにまとめて `Eject <名前>` アイテムを 1 件ずつ作る。対象は `is_removable()`・`can_eject()`・`can_stop()` のいずれかを満たす drive の mount に限る。shadowed な mount と drive を持たない mount（ネットワーク、スマートフォン、gdrive 等）は除外する。1 台に複数の mount がある場合、表示名は mount 名を `, ` で連結する。デバイスがなければアイテムは作らない。`searchKey` は `eject unmount remove <名前>`。
 
-`_ejectDrive(drive, mount, name)` は `drive.can_stop()` なら `drive.stop()`（アンマウント後に電源オフ。Files の「ドライブを安全に取り外す」と同じ）、そうでなければ `drive.eject_with_operation()` を呼ぶ。mount operation には `ShellMountOperation` を使い、使用中デバイスのダイアログを GNOME 標準のものにする。成功時は `Main.notify()`、失敗時は `Main.notifyError()` で通知する（`FAILED_HANDLED` は通知しない）。
+`_ejectDrive(drive, mount, name)` は `drive.can_stop()` なら `drive.stop()`（コード上のコメントではアンマウント後の電源オフを意図）、そうでなければ `drive.eject_with_operation()` を呼ぶ。mount operation には `ShellMountOperation` を使い、使用中デバイスのダイアログを GNOME 標準のものにする。成功時は `Main.notify()`、失敗時は `Main.notifyError()` で通知する（`FAILED_HANDLED` は通知しない）。
 
-根拠コード: `nuts-launcher@local/extension.js:290-340`
+根拠コード: `nuts-launcher@local/extension.js:374-424`
 
 ### 起動中アプリの強制終了
 
-`_show()` ごとに `Shell.AppSystem.get_running()` から `Force Quit <名前>` 項目を作る。GNOME Shell がウィンドウを把握しているアプリが対象で、`force quit` とアプリ名で検索できる。選択時はその時点の `app.get_windows()` を取得し、各ウィンドウに `kill()` を呼ぶ。終了済みでウィンドウがなければ何もしない。例外はログと通知で報告し、残りのウィンドウの処理を続ける。未保存データは失われ得る。
+`_show()` ごとに `Shell.AppSystem.get_running()` から `Force Quit <名前>` 項目を作る。GNOME Shell が返す起動中アプリが対象で、`force quit` とアプリ名で検索できる。選択時はその時点の `app.get_windows()` を取得し、各ウィンドウに `kill()` を呼ぶ。終了済みでウィンドウがなければ何もしない。例外はログと通知で報告し、残りのウィンドウの処理を続ける。未保存データは失われ得る。
 
-根拠コード: `nuts-launcher@local/extension.js:195-197`, `nuts-launcher@local/extension.js:280-302`
+根拠コード: `nuts-launcher@local/extension.js:218-223`, `nuts-launcher@local/extension.js:316-338`
 
 ### 検索・結果表示
 
-検索は display name と desktop id の case-insensitive 部分一致。表示件数は `MAX_RESULTS`（10）に制限し、Web Search の枠を常に確保する。
+検索は display name と desktop id の case-insensitive 部分一致。表示件数は `MAX_RESULTS`（10）に制限する。通常検索では Web Search の枠を確保する。
 
 強制終了、eject、システムアクションの順に連結し（以下 `systemItems`）、まとめて扱う。
 
 クエリが空の場合は Web Search のみ表示する。クエリがある場合は一致したアプリと `systemItems` を最大 9 件表示し、Web Search を末尾に追加する。Web 検索モードでは Web Search のみ表示する。
 
-HTTP / HTTPS URL は検証後に先頭の Open URL 項目として表示する。`open url`、`http`、`https` に一致する検索文字列では Open URL の入力モードへの入口も表示する。入力モードでは URL にスキームがなければ `https://` を補い、有効な URL を先頭に表示する。空欄・無効な URL・他のスキームは開かない。検索結果は Web Search の枠を含め最大 10 件とする。
+HTTP / HTTPS URL は検証後に先頭の Open URL 項目として表示する。`open url`、`http`、`https` に一致する検索文字列では Open URL の入力モードへの入口も表示する。入力モードでは URL にスキームがなければ `https://` を補い、有効な URL を先頭に表示する。空欄・無効な URL・他のスキームは開かない。検索結果は最大 10 件とする。
 
 検索結果は入力変更ごとに作り直す。各行は icon、label、button press handler を持ち、クリック時は選択 index を更新して起動する。
 
-根拠コード: `nuts-launcher@local/extension.js:357-422`
+根拠コード: `nuts-launcher@local/extension.js:441-537`
 
 ### キーボード操作・起動
 
@@ -112,7 +112,7 @@ Open URL の入口を選ぶと入力欄を消去して URL 入力モードに切
 
 Enter は `ClutterText::activate` で処理し、入力メソッドによる変換確定を優先する。Ctrl の状態は現在のイベントから取得する。
 
-根拠コード: `nuts-launcher@local/extension.js:435-497`
+根拠コード: `nuts-launcher@local/extension.js:154-168`, `nuts-launcher@local/extension.js:551-657`
 
 ## 重要な設計判断
 
@@ -120,7 +120,7 @@ Enter は `ClutterText::activate` で処理し、入力メソッドによる変�
 
 `Main.pushModal()` の戻り値を `_modalGrab` に保存し、解放時は同じ object を `Main.popModal()` に渡す。actor を渡して pop すると `incorrect pop` で extension が error state になる可能性がある。
 
-根拠コード: `nuts-launcher@local/extension.js:205-248`
+根拠コード: `nuts-launcher@local/extension.js:249-291`
 
 ### keyboard grab の判定は GNOME version 差を吸収する
 
@@ -128,47 +128,47 @@ GNOME 46 では `grab.get_seat_state()` の `Clutter.GrabState.KEYBOARD` ビッ�
 
 `get_seat_state()` を無条件に呼ぶと GNOME 50 では `TypeError` になり、`_show()` が `grab_key_focus()` 前に中断して launcher にフォーカスが当たらず、`pushModal()` 済みの grab も `_modalGrab` に保存されないままリークする。
 
-根拠コード: `nuts-launcher@local/extension.js:229-236`
+根拠コード: `nuts-launcher@local/extension.js:249-280`
 
 ### 表示を短く遅延する
 
 DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tmux のキー release が失われ、prompt が Enter repeat のような状態になることがある。`SHOW_GRAB_DELAY_MS` で短く遅延し、呼び出し元が入力状態を正常に閉じる余地を作る。
 
-根拠コード: `nuts-launcher@local/extension.js:23`, `nuts-launcher@local/extension.js:162-170`
+根拠コード: `nuts-launcher@local/extension.js:23`, `nuts-launcher@local/extension.js:200-207`
 
 ### key handler は entry に限定する
 
 通常文字入力は entry に流し、launcher 操作用キーだけを `key-press-event` で止める。global stage の `captured-event` は使わない。
 
-根拠コード: `nuts-launcher@local/extension.js:126-134`, `nuts-launcher@local/extension.js:435-461`
+根拠コード: `nuts-launcher@local/extension.js:154-168`, `nuts-launcher@local/extension.js:551-572`
 
 ### システムアクションは静的リストとして構築する
 
-システムアクションは runtime に変化しないため、`enable()` 時に一度だけ構築する。`SystemActions.getDefault()` の参照を closure に閉じ込め、呼び出しタイミングまで singleton の生存を保証する。
+システムアクションの項目は `enable()` 時に一度だけ構築する。`SystemActions.getDefault()` の参照を各 action の closure から使う。
 
-根拠コード: `nuts-launcher@local/extension.js:263-288`
+根拠コード: `nuts-launcher@local/extension.js:340-372`
 
 ### eject アイテムは Show() ごとに再構築する
 
 接続中のデバイスは runtime に変わるため、eject アイテムは `_show()` のたびに `_buildEjectItems()` で作り直す。`Gio.VolumeMonitor` の signal を接続しないので、`disable()` で追加の cleanup は不要。launcher を開いた後に接続したデバイスは、次に開いたときに表示される。
 
-根拠コード: `nuts-launcher@local/extension.js:180-181`, `nuts-launcher@local/extension.js:290-316`
+根拠コード: `nuts-launcher@local/extension.js:218-223`, `nuts-launcher@local/extension.js:374-400`
 
 ### ShellMountOperation には mount を渡す
 
-`ShellMountOperation` のコンストラクタは `source.get_drive()` を呼ぶため、mount か volume を渡す必要がある。drive を渡すと `TypeError` になり eject が始まらない。実際の stop / eject は drive に対して行う。
+コードは `ShellMountOperation` に mount を渡し、stop / eject は drive に対して行う。コメントには mount operation が `source.get_drive()` を呼ぶためと記載されている。
 
-根拠コード: `nuts-launcher@local/extension.js:318-340`
+根拠コード: `nuts-launcher@local/extension.js:402-424`
 
-### Web Search は常に表示する
+### 通常の検索では Web Search を表示する
 
-空クエリ時は Web Search のみを表示し、入力時はアプリと `systemItems` を検索キーワードで絞り込んだ上で Web Search の枠を確保する。
+通常モードでは空クエリ時に Web Search のみを表示し、入力時はアプリと `systemItems` を絞り込んだ上で Web Search の枠を確保する。URL 入力モードでは Open URL を表示する。
 
-根拠コード: `nuts-launcher@local/extension.js:362-385`
+根拠コード: `nuts-launcher@local/extension.js:471-500`
 
 ## 統合ポイント
 
-- DBus 呼び出し元: `gdbus call`, wrapper script (`~/.local/bin/nuts-launcher-us`)
+- DBus 呼び出し元: `gdbus call`, wrapper script (`~/.local/bin/trigger-nuts-launcher`)
 - GNOME Shell UI: `Main.layoutManager.addTopChrome()` / `removeChrome()`, `Main.pushModal()` / `popModal()`
 - GNOME app list: `Gio.AppInfo.get_all()`
 - GNOME app activation: `Shell.AppSystem.get_default().lookup_app()` / `Shell.App.activate()` / `Shell.App.open_new_window()`
@@ -185,11 +185,12 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - multi-monitor 対応は primary monitor のみ
 - fuzzy search、最近使ったアプリ、使用頻度学習は未実装
 - システムアクションの実行時の確認や可用性は GNOME Shell の `SystemActions` に従う
-- USB ハブ経由で接続した HDD は、`drive.stop()` の成功後にハブが再接続し、自動で再マウントされて回転が止まらないことがある（Files でも同じ挙動）。issue #12 で対応を検討中
+- USB ハブ経由の HDD の再マウント・停止挙動は環境依存であり、実機確認が必要（関連 issue #12）。
 
 ## 変更履歴（git log より自動生成）
 
-- 3e39e4e feat(#32): open web addresses from launcher
+- f727afd refactor: simplify launcher actions and cleanup
+- 3328e4f feat(#32): open web addresses from launcher (#33)
 - aeb411b feat(#28): add web search to launcher (#29)
 - 46ec9c0 feat(#26): add force quit actions for running apps (#27)
 - d134e11 feat(#20): close launcher on outside click (#21)
@@ -198,4 +199,3 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - f394d7b fix(#14): activate running applications (#15)
 - f12a1c0 feat: add per-device eject commands to the launcher (#11)
 - ca4e986 fix(#9): restore launcher focus on GNOME 50 and install via symlink (#10)
-- 918734f fix: allow global shortcuts through the launcher's modal keyboard grab

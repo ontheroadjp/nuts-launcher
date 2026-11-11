@@ -7,7 +7,7 @@ AI 運用の single source of truth。
 Ubuntu 24.04 LTS / GNOME Wayland 向けの最小アプリ起動 GNOME Shell extension。
 DBus API (`Show`/`Hide`/`Toggle`) で外部から制御する。FEP/IME 切替は担当しない。
 
-仕様の source of truth: `nuts-launcher-local-issue.md`
+現行実装の説明: `docs/L3_implementation/specification_summary.md`
 
 ## Custom / Command の使い分け（AI向けルール）
 
@@ -26,7 +26,7 @@ DBus API (`Show`/`Hide`/`Toggle`) で外部から制御する。FEP/IME 切替�
 - `org.gnome.Shell.Eval` を使うコードを追加しない
 - `disable()` 時のクリーンアップ（DBus unexport, bus name unown, signal disconnect, UI destroy）を必ず実装する
 
-根拠: `nuts-launcher-local-issue.md:336-369`, `docs/L0_concept/policy.md`
+根拠: `docs/L0_concept/policy.md`
 
 ## 技術スタック
 
