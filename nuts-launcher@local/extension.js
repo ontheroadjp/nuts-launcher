@@ -30,6 +30,7 @@ export default class NutsLauncherExtension extends Extension {
         this._entryKeyPressId = null;
         this._entryActivateId = null;
         this._showTimeoutId = null;
+        this._positionIdleId = null;
         this._selectedIndex = 0;
         this._webSearchMode = false;
         this._urlMode = false;
@@ -184,6 +185,7 @@ export default class NutsLauncherExtension extends Extension {
             this._entryActivateId = null;
         }
         this._cancelQueuedShow();
+        this._cancelPosition();
         this._releaseModalGrab();
 
         if (this._mainBox) {
@@ -290,14 +292,23 @@ export default class NutsLauncherExtension extends Extension {
     }
 
     _positionWindow() {
+        this._cancelPosition();
         const monitor = Main.layoutManager.primaryMonitor;
-        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+        this._positionIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            this._positionIdleId = null;
             const [w, h] = this._mainBox.get_size();
             const x = monitor.x + Math.round((monitor.width - w) / 2);
             const y = monitor.y + Math.round((monitor.height - h) / 3);
             this._mainBox.set_position(x, y);
             return GLib.SOURCE_REMOVE;
         });
+    }
+
+    _cancelPosition() {
+        if (this._positionIdleId) {
+            GLib.source_remove(this._positionIdleId);
+            this._positionIdleId = null;
+        }
     }
 
     // --- App list ---
@@ -433,26 +444,38 @@ export default class NutsLauncherExtension extends Extension {
     }
 
     _updateResults(query) {
-        const lq = query.toLowerCase();
-        const systemItems = [...this._forceQuitItems, ...this._ejectItems, ...this._systemItems];
-        let urlItem = null;
+        const urlItem = this._makeUrlItem(query);
+        this._filteredApps = this._buildSearchResults(query, urlItem);
+        this._renderResults();
+        this._selectedIndex = this._webSearchMode && !urlItem
+            ? this._filteredApps.indexOf(this._webSearchItem) : 0;
+        this._highlightSelected();
+    }
+
+    _makeUrlItem(query) {
         const candidate = this._urlMode && query && !/^[a-z][a-z\d+.-]*:\/\//i.test(query)
             ? `https://${query}` : query;
         if (/^https?:\/\//i.test(candidate) && !/\s/.test(candidate)) {
             try {
                 const uri = GLib.Uri.parse(candidate, GLib.UriFlags.NONE);
-                if (uri.get_host()) {
-                    urlItem = { displayName: `Open URL: ${query}`, url: candidate,
+                if (uri.get_host())
+                    return { displayName: `Open URL: ${query}`, url: candidate,
                         icon: Gio.ThemedIcon.new('web-browser-symbolic') };
-                }
             } catch (e) {
                 // Invalid URI input remains available as a web search.
             }
         }
+        return null;
+    }
+
+    _buildSearchResults(query, urlItem) {
+        const lq = query.toLowerCase();
+        const systemItems = [...this._forceQuitItems, ...this._ejectItems, ...this._systemItems];
+        let results;
         if (this._urlMode) {
-            this._filteredApps = [this._openUrlItem];
+            results = [this._openUrlItem];
         } else if (lq === '' || this._webSearchMode) {
-            this._filteredApps = [this._webSearchItem];
+            results = [this._webSearchItem];
         } else {
             const filteredApps = this._apps.filter(a =>
                 a.searchKey.includes(lq) || a.desktopId.includes(lq)
@@ -460,26 +483,21 @@ export default class NutsLauncherExtension extends Extension {
             const filteredSys = systemItems.filter(s =>
                 s.searchKey.includes(lq)
             );
-            this._filteredApps = [...filteredApps, ...filteredSys].slice(0, MAX_RESULTS - 1);
-            this._filteredApps.push(this._webSearchItem);
+            results = [...filteredApps, ...filteredSys].slice(0, MAX_RESULTS - 1);
+            results.push(this._webSearchItem);
             if ('open url http https'.includes(lq)) {
-                if (this._filteredApps.length === MAX_RESULTS)
-                    this._filteredApps.splice(MAX_RESULTS - 2, 1);
-                this._filteredApps.splice(this._filteredApps.length - 1, 0, this._openUrlItem);
+                if (results.length === MAX_RESULTS)
+                    results.splice(MAX_RESULTS - 2, 1);
+                results.splice(results.length - 1, 0, this._openUrlItem);
             }
         }
 
         if (urlItem) {
-            if (this._filteredApps.length === MAX_RESULTS)
-                this._filteredApps.splice(MAX_RESULTS - 2, 1);
-            this._filteredApps.unshift(urlItem);
+            if (results.length === MAX_RESULTS)
+                results.splice(MAX_RESULTS - 2, 1);
+            results.unshift(urlItem);
         }
-
-        this._renderResults();
-
-        this._selectedIndex = this._webSearchMode && !urlItem
-            ? this._filteredApps.indexOf(this._webSearchItem) : 0;
-        this._highlightSelected();
+        return results;
     }
 
     _renderResults() {
@@ -571,68 +589,70 @@ export default class NutsLauncherExtension extends Extension {
             return;
 
         if (item.url) {
-            this._hide();
-            try {
-                Gio.AppInfo.launch_default_for_uri(item.url, null);
-            } catch (e) {
-                console.error('NutsLauncher: failed to open URL:', e);
-                Main.notifyError('Open URL', 'Could not open the default browser');
-            }
+            this._openUri(item.url, 'Open URL');
             return;
         }
 
         if (item === this._openUrlItem) {
-            if (!this._urlMode) {
-                this._urlMode = true;
-                this._webSearchMode = false;
-                this._entry.hint_text = 'URL 入力';
-                this._entry.set_text('');
-                this._entry.grab_key_focus();
-            }
+            if (!this._urlMode)
+                this._enterInputMode(true);
             return;
         }
 
         if (item === this._webSearchItem) {
-            const query = this._entry.get_text().trim();
-            if (!this._webSearchMode &&
-                (!query || item.displayName.toLowerCase().includes(query.toLowerCase()))) {
-                this._webSearchMode = true;
-                this._entry.hint_text = 'WEB 検索';
-                this._entry.set_text('');
-                this._entry.grab_key_focus();
-                return;
-            }
-            if (!query)
-                return;
-            this._hide();
-            try {
-                Gio.AppInfo.launch_default_for_uri(
-                    `https://www.google.com/search?q=${encodeURIComponent(query)}`, null);
-            } catch (e) {
-                console.error('NutsLauncher: failed to open web search:', e);
-                Main.notifyError('Web Search', 'Could not open the default browser');
-            }
+            this._launchWebSearch(item);
             return;
         }
 
         this._hide();
-
-        if (item.activate) {
+        if (item.activate)
             item.activate();
-        } else {
-            try {
-                const id = item.info.get_id();
-                const app = id ? Shell.AppSystem.get_default().lookup_app(id) : null;
-                if (app) {
-                    if (newWindow)
-                        app.open_new_window(-1);
-                    else
-                        app.activate();
-                } else
-                    item.info.launch([], null);
-            } catch (e) {
-                console.error(`NutsLauncher: failed to launch ${item.displayName}:`, e);
-            }
+        else
+            this._launchApp(item, newWindow);
+    }
+
+    _enterInputMode(urlMode) {
+        this._urlMode = urlMode;
+        this._webSearchMode = !urlMode;
+        this._entry.hint_text = urlMode ? 'URL 入力' : 'WEB 検索';
+        this._entry.set_text('');
+        this._entry.grab_key_focus();
+    }
+
+    _launchWebSearch(item) {
+        const query = this._entry.get_text().trim();
+        if (!this._webSearchMode &&
+            (!query || item.displayName.toLowerCase().includes(query.toLowerCase()))) {
+            this._enterInputMode(false);
+            return;
+        }
+        if (query)
+            this._openUri(`https://www.google.com/search?q=${encodeURIComponent(query)}`, 'Web Search');
+    }
+
+    _openUri(uri, label) {
+        this._hide();
+        try {
+            Gio.AppInfo.launch_default_for_uri(uri, null);
+        } catch (e) {
+            console.error(`NutsLauncher: failed to open ${label}:`, e);
+            Main.notifyError(label, 'Could not open the default browser');
+        }
+    }
+
+    _launchApp(item, newWindow) {
+        try {
+            const id = item.info.get_id();
+            const app = id ? Shell.AppSystem.get_default().lookup_app(id) : null;
+            if (app) {
+                if (newWindow)
+                    app.open_new_window(-1);
+                else
+                    app.activate();
+            } else
+                item.info.launch([], null);
+        } catch (e) {
+            console.error(`NutsLauncher: failed to launch ${item.displayName}:`, e);
         }
     }
 }

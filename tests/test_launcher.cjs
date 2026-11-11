@@ -243,12 +243,31 @@ test('disable releases DBus, pending show, grab, signals and UI', () => {
     const box = { destroy: () => calls.push(['destroy']) };
     Object.assign(launcher, { _busNameId: 1, _dbusRegistrationId: 2,
         _entry: { get_clutter_text: () => text }, _entryTextChangedId: 3,
-        _entryKeyPressId: 4, _entryActivateId: 6, _showTimeoutId: 5, _modalGrab: 'grab', _mainBox: box });
+        _entryKeyPressId: 4, _entryActivateId: 6, _showTimeoutId: 5, _positionIdleId: 7,
+        _modalGrab: 'grab', _mainBox: box });
     launcher.disable();
     assert.deepEqual(calls, [['unown', 1], ['unregister', 2], ['disconnect', 3],
-        ['disconnect', 4], ['disconnect', 6], ['cancel', 5], ['pop', 'grab'], ['remove', box], ['destroy']]);
+        ['disconnect', 4], ['disconnect', 6], ['cancel', 5], ['cancel', 7],
+        ['pop', 'grab'], ['remove', box], ['destroy']]);
     assert.equal(launcher._mainBox, null);
     assert.equal(launcher._apps, null);
+});
+
+test('positioning replaces pending work and clears its id after execution', () => {
+    const { launcher, calls, Main, context } = fixture();
+    const callbacks = [];
+    context.GLib.idle_add = (_, callback) => { callbacks.push(callback); return callbacks.length; };
+    Main.layoutManager.primaryMonitor = { x: 0, y: 0, width: 1200, height: 900 };
+    launcher._mainBox = { get_size: () => [300, 300],
+        set_position: (x, y) => calls.push(['position', x, y]) };
+    launcher._positionWindow();
+    launcher._positionWindow();
+    assert.deepEqual(calls, [['cancel', 1]]);
+    callbacks[1]();
+    assert.deepEqual(calls, [['cancel', 1], ['position', 450, 200]]);
+    assert.equal(launcher._positionIdleId, null);
+    launcher._cancelPosition();
+    assert.equal(calls.length, 2);
 });
 
 test('keyboard grab checks both supported GNOME API variants', () => {
