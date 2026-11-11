@@ -11,12 +11,14 @@
     "install": "ln -s \"$PWD/nuts-launcher@local\" ~/.local/share/gnome-shell/extensions/nuts-launcher@local",
     "enable": "gnome-extensions enable nuts-launcher@local",
     "disable": "gnome-extensions disable nuts-launcher@local",
-    "reload": "gnome-extensions disable nuts-launcher@local && gnome-extensions enable nuts-launcher@local",
     "logs": "journalctl --user -f /usr/bin/gnome-shell",
     "dbus_show": "gdbus call --session --dest org.gnome.Shell.Extensions.NutsLauncher --object-path /org/gnome/Shell/Extensions/NutsLauncher --method org.gnome.Shell.Extensions.NutsLauncher.Show",
     "dbus_hide": "gdbus call --session --dest org.gnome.Shell.Extensions.NutsLauncher --object-path /org/gnome/Shell/Extensions/NutsLauncher --method org.gnome.Shell.Extensions.NutsLauncher.Hide",
     "dbus_toggle": "gdbus call --session --dest org.gnome.Shell.Extensions.NutsLauncher --object-path /org/gnome/Shell/Extensions/NutsLauncher --method org.gnome.Shell.Extensions.NutsLauncher.Toggle",
-    "gnome_version": "gnome-shell --version"
+    "gnome_version": "gnome-shell --version",
+    "installer": "./install.sh",
+    "test_installer": "python3 -m unittest discover -s tests -p test_install.py",
+    "test_launcher": "node --test tests/test_launcher.cjs"
   },
   "primary_docs": {
     "investigation": "docs/L3_implementation/specification_summary.md",

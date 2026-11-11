@@ -38,8 +38,8 @@ DBus API (`Show`/`Hide`/`Toggle`) で外部から制御する。FEP/IME 切替�
 
 ## Local Tooling Environment
 
-Observed by /init-docs on 2026-06-23:
-- gh: 2.95.0
+Observed by /init-docs on 2026-11-11:
+- gh: 2.102.0
 - gh auth: Logged in to github.com as `ontheroadjp` (keyring, SSH protocol)
 - node: v24.16.0 (managed by mise)
 - npm: 11.13.0 (managed by mise)
@@ -51,10 +51,9 @@ Notes:
 - Do not install or upgrade `gh`, Node.js, or npm automatically without explicit user confirmation.
 - Node.js is not used in this project directly — the extension runs in GJS inside GNOME Shell.
 
-## 未実装状態について（2026-06-23 時点）
+## 実装状態
 
-`nuts-launcher@local/` ディレクトリ（`metadata.json`, `extension.js`, `stylesheet.css`）はまだ作成されていない。
-実装は `nuts-launcher-local-issue.md:559-574` の作業ステップに従って進める。
+`nuts-launcher@local/` に extension 本体が存在する。実装仕様は `docs/L3_implementation/specification_summary.md` を参照する。
 
 <!-- BEGIN core-toolkit-for-claude (install.sh) -->
 # CLAUDE.md
@@ -176,8 +175,8 @@ L3 per-file doc の `根拠: <file>:<line-range>` citation を使った対象読
 
 ## Local Tooling Environment
 
-Observed by /init-docs on 2026-08-10:
-- gh: 2.97.0
+Observed by /init-docs on 2026-11-11:
+- gh: 2.102.0
 - gh auth: logged in to github.com; active account available for repository operations
 - node: v24.16.0
 - npm: 11.13.0

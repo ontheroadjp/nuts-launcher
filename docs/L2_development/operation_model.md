@@ -3,7 +3,7 @@
 ## 前提
 
 - Ubuntu 24.04 LTS + GNOME Wayland 環境
-- `FepSwitcher` GNOME extension が稼働済み
+- FEP 切替を使う場合は `FepSwitcher` GNOME extension が必要。利用できなくても wrapper は launcher の Toggle を試みる
 - CI/CD パイプラインなし（個人用ローカル extension）
 
 根拠: `README.md`
@@ -45,16 +45,7 @@ gnome-extensions disable nuts-launcher@local
 
 ## リロード（変更後の反映）
 
-GNOME Shell extension の変更は、disable → enable で反映される。
-
-```bash
-gnome-extensions disable nuts-launcher@local
-gnome-extensions enable nuts-launcher@local
-```
-
-または Wayland 環境では、GNOME Shell 自体の再ログインが必要になる場合がある（未確認）。
-
-根拠: `README.md`
+Wayland では変更後にログアウトして再ログインし、GNOME Shell を再読み込みする。根拠: `README.md` の Installation。
 
 ## ログ確認
 

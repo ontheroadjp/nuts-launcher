@@ -103,7 +103,7 @@ const apps = Gio.AppInfo.get_all()
 
 eject アイテムは `_buildEjectItems()` で `Show()` ごとに再構築する。`Gio.VolumeMonitor` の mount を drive 単位でまとめ、removable / ejectable / stoppable な drive だけを対象にする。
 
-強制終了アイテムは `Show()` ごとに `Shell.AppSystem.get_running()` から作る。GNOME Shell がウィンドウを把握する起動中アプリごとに `Force Quit <名前>` を表示する。
+強制終了アイテムは `Show()` ごとに `Shell.AppSystem.get_running()` から作る。GNOME Shell が返す起動中アプリごとに `Force Quit <名前>` を表示する。
 
 ## インクリメンタル検索
 
@@ -111,7 +111,7 @@ eject アイテムは `_buildEjectItems()` で `Show()` ごとに再構築する
 
 - 入力変更ごとに即時更新
 - case-insensitive 部分一致
-- 検索対象: display name, app name, desktop id
+- 検索対象: display name、desktop id、および各アクションの検索語
 - 入力が空の場合: Web Search のみ表示
 - 入力がある場合: 部分一致するアプリ、強制終了、eject、システムアクションを最大 9 件表示し、Web Search を追加する。強制終了は `force quit` / アプリ名で検索可
 - 空欄または Web Search の項目名に一致する文字列で Web Search を選ぶと入力を消去し、Web 検索モードに切り替える。それ以外の文字列から選ぶと、その文字列で Google 検索を開く。Web 検索モードでは入力後の Enter で検索する
