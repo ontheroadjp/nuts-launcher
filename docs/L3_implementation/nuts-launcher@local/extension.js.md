@@ -92,7 +92,7 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 
 通常検索では、有効な四則演算式の結果を先頭に表示し、選択するとクリップボードにコピーする。整数部分が 4 桁以上の結果は、その下にカンマ区切りの候補も表示する。続いて入力式と結果を連結した候補を表示し、式または結果に 4 桁以上の整数部分があればカンマ区切り版も表示する。式付き候補では `*` と `/` を `×` と `÷` で表示する。各候補は選択した形式でコピーする。小数、符号、括弧と演算子の優先順位に対応する。式は専用パーサーで処理し、任意の JavaScript は実行しない。不完全な式、ゼロ除算、非有限の結果は通常の検索として扱う。入力長は 512 文字、入れ子は 100 段階までに制限する。
 
-根拠コード: `nuts-launcher@local/extension.js:26-82`, `nuts-launcher@local/extension.js:530-570`
+根拠コード: `nuts-launcher@local/extension.js:26-89`, `nuts-launcher@local/extension.js:535-585`
 
 HTTP / HTTPS URL は検証後に先頭の Open URL 項目として表示する。`open url`、`http`、`https` に一致する検索文字列では Open URL の入力モードへの入口も表示する。入力モードでは URL にスキームがなければ `https://` を補い、有効な URL を先頭に表示する。空欄・無効な URL・他のスキームは開かない。検索結果は最大 10 件とする。
 
@@ -193,6 +193,9 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
+- ee4242e feat(#35): show equations in calculator results
+- f96ca41 feat(#35): show grouped calculator results
+- 1f6816a feat(#35): add calculator search results
 - f727afd refactor: simplify launcher actions and cleanup
 - 3328e4f feat(#32): open web addresses from launcher (#33)
 - aeb411b feat(#28): add web search to launcher (#29)
@@ -200,6 +203,3 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - d134e11 feat(#20): close launcher on outside click (#21)
 - c62eadf feat(#18): add suspend action to launcher (#19)
 - 33acfdf feat(#16): open new windows with ctrl enter (#17)
-- f394d7b fix(#14): activate running applications (#15)
-- f12a1c0 feat: add per-device eject commands to the launcher (#11)
-- ca4e986 fix(#9): restore launcher focus on GNOME 50 and install via symlink (#10)

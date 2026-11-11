@@ -6,6 +6,7 @@ Nuts Launcher is a GNOME Shell extension for launching applications, searching t
 
 - **Launch applications:** Search by part of an application name or desktop ID. Already-running applications are activated.
 - **Search the web:** Search Google from the launcher, or select Web Search to enter a dedicated search mode.
+- **Calculate:** Enter an arithmetic expression to see results and copy a selected result or equation.
 - **Open URLs:** Open HTTP and HTTPS addresses in your browser. In Open URL mode, HTTPS is assumed when the scheme is omitted.
 - **Control the system:** Search for Suspend, Log Out, Shut Down, or Restart.
 - **Eject drives:** Search for removable, ejectable, or stoppable drives with visible mounts and safely remove them.
@@ -36,6 +37,8 @@ Switching the input method to US requires the separate FepSwitcher extension. Th
 3. Select an item with `Up` / `Down` or `Ctrl+K` / `Ctrl+J`, then press `Enter` to run it. Press `Ctrl+Enter` to request a new application window, or `Esc` to close the launcher.
 
 Select Web Search after typing a query to search for it. Selecting it with an empty input or a query matching its name opens a dedicated search mode. Select Open URL to enter its dedicated input mode.
+
+Enter an expression such as `1234*2` to calculate it. Select a result or equation to copy it; comma-separated variants appear when applicable.
 
 ## Developer information
 
