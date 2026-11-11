@@ -1,80 +1,84 @@
 # Nuts Launcher
 
-Minimal GNOME application launcher with DBus control for Ubuntu 24.04 LTS / GNOME Wayland.
+Nuts Launcher is a GNOME Shell extension for launching applications, searching the web, and performing system actions from the keyboard. Open the launcher with a shortcut, type a name, and select an item.
 
 ## Features
 
-- DBus API (`Show()` / `Hide()` / `Toggle()`) for external control
-- Incremental search (case-insensitive substring match)
-- Web Search: search Google from the launcher, or select Web Search by name to enter a dedicated search mode
-- Open URL: open HTTP and HTTPS addresses directly, or select Open URL to enter an address without a scheme (HTTPS is assumed)
-- App icon + name display using `Gio.AppInfo`
-- Force Quit commands: one `Force Quit <name>` item per running application with a window; searchable by `force quit` or application name. Unsaved work may be lost.
-- System actions: Suspend, Log Out, Shut Down, Restart (searchable)
-- Eject commands: one searchable `Eject <name>` item per connected external drive (e.g. USB HDD); hidden when no device is connected; searchable by `eject` / `unmount` / `remove` / device name
-- Keyboard navigation: `Enter` to launch, `Ctrl+Enter` to request a new window, `Esc` to close, `Up`/`Down` to select
-- State reset on every `Show()` call (clears input, resets selection, focuses entry)
-- Clean `disable()` with full DBus and signal cleanup
+- **Launch applications:** Search by part of an application name or desktop ID. Already-running applications are activated.
+- **Search the web:** Search Google from the launcher, or select Web Search to enter a dedicated search mode.
+- **Open URLs:** Open HTTP and HTTPS addresses in your browser. In Open URL mode, HTTPS is assumed when the scheme is omitted.
+- **Control the system:** Search for Suspend, Log Out, Shut Down, or Restart.
+- **Eject drives:** Search for removable, ejectable, or stoppable drives with visible mounts and safely remove them.
+- **Force quit applications:** Search for a running application by name or `Force Quit`. Unsaved work may be lost.
 
 ## Installation
 
+GNOME Shell 46 or 50 is required; supported versions are listed in [metadata.json](nuts-launcher@local/metadata.json). The installer uses `gnome-shell`, `gnome-extensions`, and `gjs`.
+
+Clone the repository and run the installer:
+
 ```bash
+git clone https://github.com/ontheroadjp/nuts-launcher.git
+cd nuts-launcher
 ./install.sh
 ```
 
-This symlinks `~/.local/share/gnome-shell/extensions/nuts-launcher@local` to the repo's `nuts-launcher@local/` and enables the extension. Code changes in the repo take effect after the next GNOME Shell reload (log out and back in on Wayland) without reinstalling.
+The installer creates symbolic links for the extension and its launcher script, enables the extension, and registers a custom shortcut (`Ctrl+Shift+Space`). An existing shortcut for the launcher script is preserved. If another custom shortcut uses that binding, registration stops; conflicts with GNOME's built-in shortcuts are not checked.
 
-The installer checks the installed GNOME Shell against `metadata.json` before making changes and stops if its version is unsupported or cannot be determined. It requires `gnome-shell`, `gnome-extensions`, and `gjs`.
+If GNOME Shell has not discovered the extension, log out and back in, enable it as instructed by the installer, and rerun the installer. Existing files or unrelated symbolic links at the destination paths are preserved; move them aside before retrying.
 
-Existing files or unrelated symlinks at the extension and wrapper destinations are preserved; move them aside before retrying. Re-running preserves an existing shortcut for the wrapper. If enabling fails, check the displayed error; if Shell has not discovered the extension, log out and back in, then run `gnome-extensions enable nuts-launcher@local` and rerun the installer to finish shortcut setup. Shortcut setup failures are reported and can be retried. Conflicts with GNOME built-in shortcuts are not checked. FepSwitcher is a separate extension; if its DBus service is unavailable, the installer warns that input switching may not work.
+Switching the input method to US requires the separate FepSwitcher extension. The launcher script still attempts to open Nuts Launcher if FepSwitcher is unavailable.
 
-**Manual steps (alternative):**
+## Usage
+
+1. Press `Ctrl+Shift+Space` to open the launcher. If you already have a shortcut for the launcher script, use that shortcut instead.
+2. Type an application name, action, search query, or URL. When the input is empty, Web Search is displayed.
+3. Select an item with `Up` / `Down` or `Ctrl+K` / `Ctrl+J`, then press `Enter` to run it. Press `Ctrl+Enter` to request a new application window, or `Esc` to close the launcher.
+
+Select Web Search after typing a query to search for it. Selecting it with an empty input or a query matching its name opens a dedicated search mode. Select Open URL to enter its dedicated input mode.
+
+## Developer information
+
+### Installation and reloading
+
+`./install.sh` links the repository's `nuts-launcher@local/` directory to `~/.local/share/gnome-shell/extensions/nuts-launcher@local`. Reinstallation is unnecessary after code changes, but on Wayland you must log out and back in to reload GNOME Shell.
+
+To install only the extension manually, create the destination's parent directory first if necessary, then run the following. These steps do not install the wrapper or configure a shortcut.
 
 ```bash
 ln -s "$PWD/nuts-launcher@local" ~/.local/share/gnome-shell/extensions/nuts-launcher@local
 gnome-extensions enable nuts-launcher@local
 ```
 
-## Usage
-
 ### DBus control
 
+The session bus service `org.gnome.Shell.Extensions.NutsLauncher` provides `Show`, `Hide`, and `Toggle`.
+
 ```bash
-# Show launcher
 gdbus call --session \
   --dest org.gnome.Shell.Extensions.NutsLauncher \
   --object-path /org/gnome/Shell/Extensions/NutsLauncher \
   --method org.gnome.Shell.Extensions.NutsLauncher.Show
-
-# Hide launcher
-gdbus call --session \
-  --dest org.gnome.Shell.Extensions.NutsLauncher \
-  --object-path /org/gnome/Shell/Extensions/NutsLauncher \
-  --method org.gnome.Shell.Extensions.NutsLauncher.Hide
-
-# Toggle launcher
-gdbus call --session \
-  --dest org.gnome.Shell.Extensions.NutsLauncher \
-  --object-path /org/gnome/Shell/Extensions/NutsLauncher \
-  --method org.gnome.Shell.Extensions.NutsLauncher.Toggle
 ```
 
-### View logs
+Replace `Show` with `Hide` or `Toggle` to hide or toggle the launcher. The [wrapper script](scripts/trigger-nuts-launcher) calls FepSwitcher's `SwitchToUs` before calling `Toggle`.
+
+### Logs and tests
 
 ```bash
 journalctl --user -f /usr/bin/gnome-shell
+python3 -m unittest discover -s tests -p test_install.py
+node --test tests/test_launcher.cjs
 ```
 
-### FEP integration (wrapper script)
-
-`./install.sh` automatically symlinks this script to `~/.local/bin/trigger-nuts-launcher` and registers it as a GNOME custom shortcut (`Ctrl+Shift+Space`). The script calls `FepSwitcher.SwitchToUs`, waits briefly, and then calls `NutsLauncher.Toggle`. If FepSwitcher is unavailable, the script still attempts to toggle the launcher. See [`scripts/trigger-nuts-launcher`](scripts/trigger-nuts-launcher) for the actual commands.
+The tests stub GNOME APIs and other dependencies; testing in a GNOME Shell session is also needed. Node.js is used for the launcher tests and is not required by the extension itself.
 
 ## Design Principles
 
-- **Single responsibility**: FEP/IME switching is handled by `FepSwitcher`; this extension only launches apps.
-- **No external dependencies**: Uses GJS / Gio / St / Clutter only — no npm, no shell commands.
-- **Wayland native**: No X11-specific tools (`xdotool` etc.).
-- **Minimal scope**: No settings UI, no theme switching, no file search, no plugin system.
-- **Clean lifecycle**: `disable()` always unexports DBus, releases bus name, disconnects signals, and destroys UI actors.
+- **Separation of responsibilities:** FepSwitcher handles FEP / IME switching; the extension provides launcher actions.
+- **Runs inside GNOME Shell:** The extension uses GJS and GNOME Shell APIs without external commands or npm. The installer and wrapper are shell scripts.
+- **Wayland support:** No X11-specific tools are used.
+- **Minimal scope:** No settings UI, theme switching, file search, or plugin system.
+- **Clean lifecycle:** `disable()` releases the DBus registration and bus name, disconnects signals, and destroys the UI.
 
-See `docs/L0_concept/` and `docs/L3_implementation/` for design rationale and implementation notes.
+See [docs/L0_concept](docs/L0_concept/) and [docs/L3_implementation](docs/L3_implementation/) for design and implementation details.

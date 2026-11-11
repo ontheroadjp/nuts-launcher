@@ -8,14 +8,14 @@ GNOME Shell が extension を識別・ロードするためのメタデータ。
 
 | フィールド | 値 | 根拠 |
 |-----------|-----|------|
-| `uuid` | `nuts-launcher@local` | 仕様 `nuts-launcher-local-issue.md:160` |
-| `name` | `Nuts Launcher` | 仕様 `nuts-launcher-local-issue.md:162` |
-| `shell-version` | `["46", "50"]` | `gnome-shell --version` で GNOME Shell 46.0（Ubuntu 24.04）と 50.1（Ubuntu 26.04）を実機確認。未記載の version では GNOME Shell が `OUT OF DATE` としてロードを拒否する |
-| `version` | `1` | 初期バージョン |
+| `uuid` | `nuts-launcher@local` | `nuts-launcher@local/metadata.json:2` |
+| `name` | `Nuts Launcher` | `nuts-launcher@local/metadata.json:3` |
+| `shell-version` | `["46", "50"]` | `nuts-launcher@local/metadata.json:5`。実機互換性はこのファイルだけでは確認できない |
+| `version` | `1` | `nuts-launcher@local/metadata.json:6` |
 
 根拠コード: `nuts-launcher@local/metadata.json`
 
 ## 変更履歴（git log より自動生成）
 
-- 08e7230 fix(#9): restore launcher focus on GNOME 50 and install via symlink
+- ca4e986 fix(#9): restore launcher focus on GNOME 50 and install via symlink (#10)
 - fd357fc feat(#1): implement nuts-launcher@local GNOME Shell extension

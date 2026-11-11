@@ -19,7 +19,7 @@ FepSwitcher の DBus 名が存在しなければ警告する。動作確認用 D
 
 ## 変更履歴（git log より自動生成）
 
-- 1fd0c53 fix(#24): harden installer setup and error handling
+- 8164e94 fix(#24): harden installer setup and error handling (#25)
 - ca4e986 fix(#9): restore launcher focus on GNOME 50 and install via symlink (#10)
 - a226491 feat(#7): auto-register GNOME keyboard shortcut from install.sh
 - 5419f6a fix(#1): stabilize launcher keyboard grab

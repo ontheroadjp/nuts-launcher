@@ -1,75 +1,12 @@
 # L1 Repository Structure: Nuts Launcher
 
-## 現在のディレクトリ構成（2026-06-23 時点）
+## 構成
 
-```
-nuts-launcher/
-├── .git/                          # git リポジトリ管理
-├── .gitignore                     # DS_Store を除外 (確認済み)
-├── README.md                      # プロジェクト概要
-├── install.sh                     # インストールスクリプト（symlink + enable）
-├── nuts-launcher@local/           # GNOME Shell extension 本体
-│   ├── metadata.json              # extension メタデータ（uuid, shell-version: ["46", "50"]）
-│   ├── extension.js               # DBus, UI, 検索, キー操作, アプリ起動
-│   └── stylesheet.css             # ランチャーの見た目（ハードコーディング）
-├── docs/                          # AI 向けドキュメント（/init-docs で生成）
-│   ├── .ai/
-│   │   └── repo.profile.json
-│   ├── L0_concept/
-│   │   ├── concept.md
-│   │   └── policy.md
-│   ├── L1_project/
-│   │   ├── project_overview.md
-│   │   └── repository_structure.md   ← このファイル
-│   ├── L2_development/
-│   │   ├── operation_model.md
-│   │   └── consistency_checks.md
-│   └── L3_implementation/
-│       ├── specification_summary.md
-│       └── nuts-launcher@local/
-│           ├── extension.js.md
-│           ├── metadata.json.md
-│           ├── stylesheet.css.md
-│           └── install.sh.md
-└── CLAUDE.md                      # AI 運用ガイド
-```
+- `nuts-launcher@local/`: GNOME Shell が読み込む extension。`metadata.json` は UUID と対応バージョン、`extension.js` は動作、`stylesheet.css` は表示を定義する（根拠: `nuts-launcher@local/metadata.json:1-7`, `nuts-launcher@local/extension.js:1-26`, `nuts-launcher@local/stylesheet.css:1`）。
+- `install.sh`: extension と wrapper の配置、有効化、shortcut の設定を行う（根拠: `install.sh`）。
+- `scripts/trigger-nuts-launcher`: FepSwitcher と launcher を順に呼び出す（根拠: `scripts/trigger-nuts-launcher`）。
+- `tests/`: installer と launcher の自動テスト（根拠: `tests/test_install.py:1-10`, `tests/test_launcher.cjs:1-8`）。
+- `docs/`: 設計・開発・実装の記録。`.ai/repo.profile.json` はコマンドと主要 docs を示す。
+- `README.md`: インストールと利用手順。`CLAUDE.md`: AI 作業指示。`AGENTS.md` はその symlink。
 
-根拠: `git diff main...HEAD --name-only`（feat/nuts-launcher-extension ブランチの変更から確認）
-
-## 各ファイルの責務
-
-### `README.md`
-
-プロジェクト概要。Features / Installation / Usage / Design Principles を含む。
-
-根拠: `README.md`
-
-### `install.sh`
-
-GNOME extensions ディレクトリに `nuts-launcher@local/` への symlink を作成し、`gnome-extensions enable` で有効化するまでを一括実行するスクリプト。
-
-根拠: `install.sh`
-
-### `nuts-launcher@local/`
-
-GNOME Shell extension 本体。インストール先は `~/.local/share/gnome-shell/extensions/nuts-launcher@local/`。
-
-| ファイル | 役割 |
-|---------|------|
-| `metadata.json` | GNOME Shell が extension を識別するメタデータ。`shell-version: ["46", "50"]`（GNOME Shell 46.0 / 50.1 実機確認） |
-| `extension.js` | DBus, UI, 検索, キー操作, アプリ起動のメイン実装 |
-| `stylesheet.css` | ランチャー UI のスタイル定義（ダークテーマ固定） |
-
-根拠: `nuts-launcher@local/`（ブランチで実装済み）
-
-### `.gitignore`
-
-`DS_Store` のみ除外。macOS 環境からの作業痕跡として存在する。
-
-根拠: `.gitignore:1`
-
-## モノレポ構成
-
-モノレポではない。単一の GNOME Shell extension を管理するシンプルなリポジトリ。
-
-根拠: トップレベルに `apps/` / `packages/` 等のディレクトリは存在しない。
+トップレベルに `apps/` や `packages/` はなく、単一 extension の構成である。

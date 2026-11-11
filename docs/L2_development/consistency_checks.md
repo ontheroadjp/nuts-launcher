@@ -6,7 +6,7 @@
 
 ## 仕様書チェック項目
 
-### metadata.json との整合性（実装後に確認）
+### metadata.json との整合性
 
 - `uuid` が `nuts-launcher@local` であること
 - `shell-version` が実機の `gnome-shell --version` 出力と一致すること
@@ -39,24 +39,24 @@
 
 根拠: `nuts-launcher@local/extension.js`
 
-## 受け入れ条件チェックリスト（実装後）
+## 受け入れ条件チェックリスト（実機で要確認）
 
 根拠: `README.md`, `nuts-launcher@local/extension.js`
 
 ### DBus
 
-- [x] `NutsLauncher.Show` 実行で launcher UI が表示される
+- [ ] `NutsLauncher.Show` 実行で launcher UI が表示される
 - [ ] `NutsLauncher.Hide` 実行で launcher UI が閉じる
 - [ ] `NutsLauncher.Toggle` 実行で表示/非表示が切り替わる
 
 ### UI
 
-- [x] 表示時に検索入力欄へ focus される
-- [x] 入力すると即時に結果が絞り込まれる
-- [x] 結果にアプリアイコンとアプリ名が表示される
-- [x] `Down` / `Up` で選択行が移動する
-- [x] `Enter` で選択中のアプリが起動する
-- [x] `Esc` で launcher が閉じる
+- [ ] 表示時に検索入力欄へ focus される
+- [ ] 入力すると即時に結果が絞り込まれる
+- [ ] 結果にアプリアイコンとアプリ名が表示される
+- [ ] `Down` / `Up` で選択行が移動する
+- [ ] `Enter` で選択中のアプリが起動する
+- [ ] `Esc` で launcher が閉じる
 
 ### FEP 連携
 
@@ -66,7 +66,7 @@
 
 ## CI/CD
 
-CI/CD パイプラインは存在しない（個人用ローカル extension のため）。
+CI/CD パイプラインは存在しない。
 
 根拠: リポジトリに `.github/workflows/` 等のディレクトリなし。
 
@@ -75,4 +75,4 @@ CI/CD パイプラインは存在しない（個人用ローカル extension の
 | 事項 | 理由 | 確認方法 |
 |------|------|---------|
 | GNOME Shell のバージョン | 実機でのみ確認可能 | `gnome-shell --version` を実行 |
-| extension reload の方法 | Wayland では GNOME Shell 再起動が必要な場合あり | 実機で `disable`→`enable` を試行 |
+| 実機での DBus・UI・FEP 連携 | 自動テストは GNOME Shell を模擬する | `README.md` の Usage と上記チェックリストを実機で確認 |
