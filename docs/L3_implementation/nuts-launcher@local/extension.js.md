@@ -193,9 +193,8 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
-- ee4242e feat(#35): show equations in calculator results
-- f96ca41 feat(#35): show grouped calculator results
-- 1f6816a feat(#35): add calculator search results
+- aff5dc5 fix(#37): request browser activation for web links
+- 1af9bdc feat(#35): add calculator search results (#36)
 - f727afd refactor: simplify launcher actions and cleanup
 - 3328e4f feat(#32): open web addresses from launcher (#33)
 - aeb411b feat(#28): add web search to launcher (#29)
@@ -203,3 +202,4 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - d134e11 feat(#20): close launcher on outside click (#21)
 - c62eadf feat(#18): add suspend action to launcher (#19)
 - 33acfdf feat(#16): open new windows with ctrl enter (#17)
+- f394d7b fix(#14): activate running applications (#15)

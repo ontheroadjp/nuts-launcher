@@ -144,6 +144,8 @@ fuzzy search・使用頻度学習は実装されていない。
 
 launcher を閉じて modal grab を解放した後、アプリの場合は desktop ID で `Shell.AppSystem` から取得したアプリを通常は `activate()` する。起動済みなら既存ウィンドウをアクティブ化し、未起動なら起動する。Ctrl+Enter では `open_new_window(-1)` を呼ぶ。取得できない場合は `item.info.launch([], null)` を使う。
 
+Web Search と Open URL は GNOME Shell の起動コンテキストを渡して URI を開き、ブラウザのアクティブ化を要求する。
+
 システムアクションの場合:
 ```js
 item.activate(); // SystemActions.getDefault().activateLogout()、_ejectDrive() 等
