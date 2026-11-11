@@ -7,6 +7,7 @@ Minimal GNOME application launcher with DBus control for Ubuntu 24.04 LTS / GNOM
 - DBus API (`Show()` / `Hide()` / `Toggle()`) for external control
 - Incremental search (case-insensitive substring match)
 - Web Search: search Google from the launcher, or select Web Search by name to enter a dedicated search mode
+- Open URL: open HTTP and HTTPS addresses directly, or select Open URL to enter an address without a scheme (HTTPS is assumed)
 - App icon + name display using `Gio.AppInfo`
 - Force Quit commands: one `Force Quit <name>` item per running application with a window; searchable by `force quit` or application name. Unsaved work may be lost.
 - System actions: Suspend, Log Out, Shut Down, Restart (searchable)

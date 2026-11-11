@@ -189,7 +189,8 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
-- 9ece62f feat(#28): add web search to launcher
+- 3e39e4e feat(#32): open web addresses from launcher
+- aeb411b feat(#28): add web search to launcher (#29)
 - 46ec9c0 feat(#26): add force quit actions for running apps (#27)
 - d134e11 feat(#20): close launcher on outside click (#21)
 - c62eadf feat(#18): add suspend action to launcher (#19)
@@ -198,4 +199,3 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - f12a1c0 feat: add per-device eject commands to the launcher (#11)
 - ca4e986 fix(#9): restore launcher focus on GNOME 50 and install via symlink (#10)
 - 918734f fix: allow global shortcuts through the launcher's modal keyboard grab
-- 96db5d2 feat(#5): add logout, shutdown, and restart options to the launcher

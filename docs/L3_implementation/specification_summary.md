@@ -80,6 +80,7 @@ export default class NutsLauncherExtension extends Extension {
 - テーマ・設定 UI は不要
 - システムアクションと接続中デバイスの eject は検索文字列に一致した場合に表示する
 - Web Search は検索文字列にかかわらず表示する
+- HTTP / HTTPS URL は Open URL として先頭に表示する。Open URL 入力モードへの入口は `open url`、`http`、`https` に一致する検索で表示する
 
 ## アプリ一覧取得とシステムアクション
 
@@ -114,6 +115,7 @@ eject アイテムは `_buildEjectItems()` で `Show()` ごとに再構築する
 - 入力が空の場合: Web Search のみ表示
 - 入力がある場合: 部分一致するアプリ、強制終了、eject、システムアクションを最大 9 件表示し、Web Search を追加する。強制終了は `force quit` / アプリ名で検索可
 - 空欄または Web Search の項目名に一致する文字列で Web Search を選ぶと入力を消去し、Web 検索モードに切り替える。それ以外の文字列から選ぶと、その文字列で Google 検索を開く。Web 検索モードでは入力後の Enter で検索する
+- Open URL を選ぶと URL 入力モードへ切り替え、スキームを省略した入力には `https://` を補う。有効な URL を選択すると既定のブラウザで開く。空欄、無効な URL、HTTP / HTTPS 以外のスキームは開かない
 - Enter は入力メソッドによる変換確定を優先する
 
 fuzzy search・使用頻度学習は後回し。
