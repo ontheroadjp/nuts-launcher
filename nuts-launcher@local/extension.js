@@ -716,7 +716,8 @@ export default class NutsLauncherExtension extends Extension {
     _openUri(uri, label) {
         this._hide();
         try {
-            Gio.AppInfo.launch_default_for_uri(uri, null);
+            const context = global.create_app_launch_context(0, -1);
+            Gio.AppInfo.launch_default_for_uri(uri, context);
         } catch (e) {
             console.error(`NutsLauncher: failed to open ${label}:`, e);
             Main.notifyError(label, 'Could not open the default browser');

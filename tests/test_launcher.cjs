@@ -28,6 +28,7 @@ function fixture() {
         .replace(/^import .*;\s*$/gm, '')
         .replace('export default class NutsLauncherExtension', 'class NutsLauncherExtension');
     const context = { Clutter, Gio, Main, GLib, Shell, St: {}, SystemActions: {},
+        global: { create_app_launch_context: () => ({}) },
         ShellMountOperation: {}, Extension: class {}, console };
     const Launcher = vm.runInNewContext(`${source}\nNutsLauncherExtension`, context);
     const launcher = new Launcher();
@@ -212,6 +213,29 @@ test('valid web URLs are first and open directly while web search remains availa
     launcher._selectedIndex = 1;
     launcher._launchSelected();
     assert.equal(calls.at(-1), 'https://www.google.com/search?q=http%3A%2F%2Fexample.com');
+});
+
+test('URI launches pass a shell activation context after hiding the launcher', () => {
+    const { launcher, Gio, Main, context } = fixture();
+    const calls = [];
+    const launchContext = {};
+    launcher._hide = () => calls.push('hide');
+    context.global.create_app_launch_context = (timestamp, workspace) => {
+        calls.push(['context', timestamp, workspace]);
+        return launchContext;
+    };
+    Gio.AppInfo.launch_default_for_uri = (uri, actualContext) => {
+        calls.push(uri);
+        assert.equal(actualContext, launchContext);
+    };
+    launcher._openUri('https://localhost', 'Open URL');
+    assert.deepEqual(calls, ['hide', ['context', 0, -1], 'https://localhost']);
+    const error = new Error('launch failed');
+    Gio.AppInfo.launch_default_for_uri = () => { throw error; };
+    Main.notifyError = (label, message) => calls.push([label, message]);
+    context.console = { error: () => {} };
+    launcher._openUri('https://localhost', 'Web Search');
+    assert.deepEqual(calls.at(-1), ['Web Search', 'Could not open the default browser']);
 });
 
 test('invalid URLs and other schemes remain ordinary searches', () => {
