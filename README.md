@@ -6,10 +6,11 @@ Minimal GNOME application launcher with DBus control for Ubuntu 24.04 LTS / GNOM
 
 - DBus API (`Show()` / `Hide()` / `Toggle()`) for external control
 - Incremental search (case-insensitive substring match)
+- Web Search: search Google from the launcher, or select Web Search by name to enter a dedicated search mode
 - App icon + name display using `Gio.AppInfo`
 - Force Quit commands: one `Force Quit <name>` item per running application with a window; searchable by `force quit` or application name. Unsaved work may be lost.
-- System actions: Suspend, Log Out, Shut Down, Restart (always shown at the bottom; searchable)
-- Eject commands: one `Eject <name>` item per connected external drive (e.g. USB HDD), shown above the system actions; hidden when no device is connected; searchable by `eject` / `unmount` / `remove` / device name
+- System actions: Suspend, Log Out, Shut Down, Restart (searchable)
+- Eject commands: one searchable `Eject <name>` item per connected external drive (e.g. USB HDD); hidden when no device is connected; searchable by `eject` / `unmount` / `remove` / device name
 - Keyboard navigation: `Enter` to launch, `Ctrl+Enter` to request a new window, `Esc` to close, `Up`/`Down` to select
 - State reset on every `Show()` call (clears input, resets selection, focuses entry)
 - Clean `disable()` with full DBus and signal cleanup
@@ -72,7 +73,7 @@ journalctl --user -f /usr/bin/gnome-shell
 - **Single responsibility**: FEP/IME switching is handled by `FepSwitcher`; this extension only launches apps.
 - **No external dependencies**: Uses GJS / Gio / St / Clutter only — no npm, no shell commands.
 - **Wayland native**: No X11-specific tools (`xdotool` etc.).
-- **Minimal scope**: No settings UI, no theme switching, no web/file search, no plugin system.
+- **Minimal scope**: No settings UI, no theme switching, no file search, no plugin system.
 - **Clean lifecycle**: `disable()` always unexports DBus, releases bus name, disconnects signals, and destroys UI actors.
 
 See `docs/L0_concept/` and `docs/L3_implementation/` for design rationale and implementation notes.

@@ -28,8 +28,14 @@ export default class NutsLauncherExtension extends Extension {
         this._modalGrab = null;
         this._entryTextChangedId = null;
         this._entryKeyPressId = null;
+        this._entryActivateId = null;
         this._showTimeoutId = null;
         this._selectedIndex = 0;
+        this._webSearchMode = false;
+        this._webSearchItem = {
+            displayName: 'Web Search...',
+            icon: Gio.ThemedIcon.new('web-browser-symbolic'),
+        };
         this._apps = [];
         this._filteredApps = [];
         this._rows = [];
@@ -140,6 +146,7 @@ export default class NutsLauncherExtension extends Extension {
         this._mainBox.add_child(this._resultsBox);
 
         const entryText = this._entry.get_clutter_text();
+        entryText.set_activatable(true);
 
         this._entryTextChangedId = entryText.connect('text-changed', () => {
             this._onSearchChanged();
@@ -147,6 +154,11 @@ export default class NutsLauncherExtension extends Extension {
 
         this._entryKeyPressId = entryText.connect('key-press-event', (_, event) => {
             return this._onKeyPress(event);
+        });
+        this._entryActivateId = entryText.connect('activate', () => {
+            const event = Clutter.get_current_event();
+            const ctrl = !!(event && (event.get_state() & Clutter.ModifierType.CONTROL_MASK));
+            this._launchSelected(ctrl);
         });
 
         Main.layoutManager.addTopChrome(this._mainBox);
@@ -160,8 +172,11 @@ export default class NutsLauncherExtension extends Extension {
                 entryText.disconnect(this._entryTextChangedId);
             if (this._entryKeyPressId)
                 entryText.disconnect(this._entryKeyPressId);
+            if (this._entryActivateId)
+                entryText.disconnect(this._entryActivateId);
             this._entryTextChangedId = null;
             this._entryKeyPressId = null;
+            this._entryActivateId = null;
         }
         this._cancelQueuedShow();
         this._releaseModalGrab();
@@ -194,6 +209,8 @@ export default class NutsLauncherExtension extends Extension {
     }
 
     _show() {
+        this._webSearchMode = false;
+        this._entry.hint_text = 'Search applications...';
         this._buildEjectItems();
         this._buildForceQuitItems();
         this._entry.set_text('');
@@ -213,6 +230,7 @@ export default class NutsLauncherExtension extends Extension {
     }
 
     _hide() {
+        this._webSearchMode = false;
         this._cancelQueuedShow();
         this._mainBox.hide();
         this._visible = false;
@@ -410,12 +428,8 @@ export default class NutsLauncherExtension extends Extension {
     _updateResults(query) {
         const lq = query.toLowerCase();
         const systemItems = [...this._forceQuitItems, ...this._ejectItems, ...this._systemItems];
-        if (lq === '') {
-            const appSlots = Math.max(0, MAX_RESULTS - systemItems.length);
-            this._filteredApps = [
-                ...this._apps.slice(0, appSlots),
-                ...systemItems,
-            ];
+        if (lq === '' || this._webSearchMode) {
+            this._filteredApps = [this._webSearchItem];
         } else {
             const filteredApps = this._apps.filter(a =>
                 a.searchKey.includes(lq) || a.desktopId.includes(lq)
@@ -423,12 +437,14 @@ export default class NutsLauncherExtension extends Extension {
             const filteredSys = systemItems.filter(s =>
                 s.searchKey.includes(lq)
             );
-            this._filteredApps = [...filteredApps, ...filteredSys].slice(0, MAX_RESULTS);
+            this._filteredApps = [...filteredApps, ...filteredSys].slice(0, MAX_RESULTS - 1);
+            this._filteredApps.push(this._webSearchItem);
         }
 
         this._renderResults();
 
-        this._selectedIndex = 0;
+        this._selectedIndex = this._webSearchMode
+            ? this._filteredApps.indexOf(this._webSearchItem) : 0;
         this._highlightSelected();
     }
 
@@ -490,11 +506,6 @@ export default class NutsLauncherExtension extends Extension {
             return Clutter.EVENT_STOP;
         }
 
-        if (sym === Clutter.KEY_Return || sym === Clutter.KEY_KP_Enter) {
-            this._launchSelected(ctrl);
-            return Clutter.EVENT_STOP;
-        }
-
         if (sym === Clutter.KEY_Down || (ctrl && sym === Clutter.KEY_j)) {
             this._moveSelection(1);
             return Clutter.EVENT_STOP;
@@ -524,6 +535,29 @@ export default class NutsLauncherExtension extends Extension {
         const item = this._filteredApps[this._selectedIndex];
         if (!item)
             return;
+
+        if (item === this._webSearchItem) {
+            const query = this._entry.get_text().trim();
+            if (!this._webSearchMode &&
+                (!query || item.displayName.toLowerCase().includes(query.toLowerCase()))) {
+                this._webSearchMode = true;
+                this._entry.hint_text = 'WEB 検索';
+                this._entry.set_text('');
+                this._entry.grab_key_focus();
+                return;
+            }
+            if (!query)
+                return;
+            this._hide();
+            try {
+                Gio.AppInfo.launch_default_for_uri(
+                    `https://www.google.com/search?q=${encodeURIComponent(query)}`, null);
+            } catch (e) {
+                console.error('NutsLauncher: failed to open web search:', e);
+                Main.notifyError('Web Search', 'Could not open the default browser');
+            }
+            return;
+        }
 
         this._hide();
 

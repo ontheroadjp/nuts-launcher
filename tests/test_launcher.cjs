@@ -30,11 +30,34 @@ function fixture() {
     launcher._forceQuitItems = [];
     launcher._ejectItems = [];
     launcher._systemItems = [];
+    launcher._webSearchItem = { displayName: 'Web Search...' };
+    launcher._webSearchMode = false;
     launcher._rows = [];
     launcher._renderResults = () => {};
     launcher._highlightSelected = () => {};
-    return { launcher, calls, Clutter, Gio, Main, appSystem };
+    return { launcher, calls, Clutter, Gio, Main, appSystem, context };
 }
+
+test('entry activation launches after input processing and preserves control modifier', () => {
+    const { launcher, Clutter, Main, context } = fixture();
+    const handlers = {};
+    const text = { set_activatable: value => assert.equal(value, true),
+        connect: (name, handler) => { handlers[name] = handler; return 1; } };
+    class Box { connect() {} add_child() {} hide() {} }
+    class Entry { get_clutter_text() { return text; } }
+    context.St.BoxLayout = Box;
+    context.St.Entry = Entry;
+    Main.layoutManager.addTopChrome = () => {};
+    Clutter.get_current_event = () => ({ get_state: () => Clutter.ModifierType.CONTROL_MASK });
+    const launches = [];
+    launcher._launchSelected = ctrl => launches.push(ctrl);
+    launcher._buildUI();
+    assert.equal(handlers['key-press-event'](text, { get_key_symbol: () => Clutter.KEY_Return,
+        get_state: () => 0 }), Clutter.EVENT_PROPAGATE);
+    assert.deepEqual(launches, []);
+    handlers.activate();
+    assert.deepEqual(launches, [true]);
+});
 
 test('search matches names and desktop IDs without case sensitivity and limits results', () => {
     const { launcher } = fixture();
@@ -51,20 +74,62 @@ test('search matches names and desktop IDs without case sensitivity and limits r
     launcher._updateResults('REBOOT');
     assert.equal(launcher._filteredApps[0].displayName, 'Restart');
     launcher._updateResults('absent');
-    assert.equal(launcher._filteredApps.length, 0);
+    assert.equal(launcher._filteredApps.length, 1);
+    assert.equal(launcher._filteredApps[0].displayName, 'Web Search...');
 });
 
-test('empty search reserves space for actions and keeps all actions when they exceed the limit', () => {
+test('empty search displays only web search', () => {
     const { launcher } = fixture();
     launcher._apps = Array.from({ length: 10 }, (_, i) => ({ displayName: `App ${i}` }));
     launcher._systemItems = Array.from({ length: 4 }, (_, i) => ({ displayName: `Action ${i}` }));
     launcher._updateResults('');
-    assert.equal(launcher._filteredApps.length, 10);
-    assert.equal(launcher._filteredApps[6].displayName, 'Action 0');
+    assert.equal(launcher._filteredApps.length, 1);
+    assert.equal(launcher._filteredApps[0].displayName, 'Web Search...');
     launcher._systemItems = Array.from({ length: 11 }, (_, i) => ({ displayName: `Action ${i}` }));
     launcher._updateResults('');
-    assert.equal(launcher._filteredApps.length, 11);
-    assert.equal(launcher._filteredApps[0].displayName, 'Action 0');
+    assert.equal(launcher._filteredApps.length, 1);
+    assert.equal(launcher._filteredApps[0].displayName, 'Web Search...');
+});
+
+test('web search stays selected after empty activation and opens an encoded query', () => {
+    const { launcher, Gio } = fixture();
+    const calls = [];
+    let query = '';
+    launcher._entry = { get_text: () => query, set_text: value => { query = value; launcher._onSearchChanged(); },
+        grab_key_focus: () => calls.push('focus') };
+    launcher._hide = () => calls.push('hide');
+    Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
+    launcher._updateResults('');
+    launcher._launchSelected();
+    assert.deepEqual(calls, ['focus']);
+    query = '日本語 & cats';
+    launcher._apps = [{ searchKey: '日本語 & cats', desktopId: '' }];
+    launcher._onSearchChanged();
+    assert.equal(launcher._filteredApps[launcher._selectedIndex], launcher._webSearchItem);
+    launcher._launchSelected();
+    assert.deepEqual(calls, ['focus', 'hide', 'https://www.google.com/search?q=%E6%97%A5%E6%9C%AC%E8%AA%9E%20%26%20cats']);
+});
+
+test('matching the web search name enters web mode, while other queries search immediately', () => {
+    const { launcher, Gio } = fixture();
+    const calls = [];
+    let query = 'web';
+    launcher._entry = { get_text: () => query, set_text: value => { query = value; launcher._onSearchChanged(); },
+        grab_key_focus: () => {} };
+    launcher._hide = () => { launcher._webSearchMode = false; calls.push('hide'); };
+    Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
+    launcher._updateResults(query);
+    launcher._launchSelected();
+    assert.equal(query, '');
+    assert.equal(launcher._entry.hint_text, 'WEB 検索');
+    query = 'web';
+    launcher._onSearchChanged();
+    launcher._launchSelected();
+    assert.deepEqual(calls, ['hide', 'https://www.google.com/search?q=web']);
+    query = 'あいみょん';
+    launcher._updateResults(query);
+    launcher._launchSelected();
+    assert.equal(calls[3], 'https://www.google.com/search?q=%E3%81%82%E3%81%84%E3%81%BF%E3%82%87%E3%82%93');
 });
 
 test('keyboard navigation clamps selection and dispatches launch and escape', () => {
@@ -80,9 +145,9 @@ test('keyboard navigation clamps selection and dispatches launch and escape', ()
     key(Clutter.KEY_j, Clutter.ModifierType.CONTROL_MASK);
     key(Clutter.KEY_Down);
     assert.equal(launcher._selectedIndex, 1);
-    key(Clutter.KEY_Return, Clutter.ModifierType.CONTROL_MASK);
+    assert.equal(key(Clutter.KEY_Return, Clutter.ModifierType.CONTROL_MASK), Clutter.EVENT_PROPAGATE);
     key(Clutter.KEY_Escape);
-    assert.deepEqual(calls, [['launch', true], ['hide']]);
+    assert.deepEqual(calls, [['hide']]);
     assert.equal(key(999), Clutter.EVENT_PROPAGATE);
 });
 
@@ -107,10 +172,10 @@ test('disable releases DBus, pending show, grab, signals and UI', () => {
     const box = { destroy: () => calls.push(['destroy']) };
     Object.assign(launcher, { _busNameId: 1, _dbusRegistrationId: 2,
         _entry: { get_clutter_text: () => text }, _entryTextChangedId: 3,
-        _entryKeyPressId: 4, _showTimeoutId: 5, _modalGrab: 'grab', _mainBox: box });
+        _entryKeyPressId: 4, _entryActivateId: 6, _showTimeoutId: 5, _modalGrab: 'grab', _mainBox: box });
     launcher.disable();
     assert.deepEqual(calls, [['unown', 1], ['unregister', 2], ['disconnect', 3],
-        ['disconnect', 4], ['cancel', 5], ['pop', 'grab'], ['remove', box], ['destroy']]);
+        ['disconnect', 4], ['disconnect', 6], ['cancel', 5], ['pop', 'grab'], ['remove', box], ['destroy']]);
     assert.equal(launcher._mainBox, null);
     assert.equal(launcher._apps, null);
 });

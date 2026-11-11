@@ -84,12 +84,11 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 
 ### 検索・結果表示
 
-検索は display name と desktop id の case-insensitive 部分一致。表示件数は `MAX_RESULTS`（10）に制限する。
+検索は display name と desktop id の case-insensitive 部分一致。表示件数は `MAX_RESULTS`（10）に制限し、Web Search の枠を常に確保する。
 
 強制終了、eject、システムアクションの順に連結し（以下 `systemItems`）、まとめて扱う。
 
-クエリが空の場合: 先頭 `Math.max(0, MAX_RESULTS - systemItems.length)` 件のアプリ + 全 `systemItems` を末尾に配置する。
-クエリがある場合: マッチしたアプリ + マッチした `systemItems` を結合し、最大 `MAX_RESULTS` 件に切り詰める。システムアクションの `searchKey` には "logout"、"shutdown"、"power off"、"reboot" 等の複数キーワードを含んでいる。
+クエリが空の場合は Web Search のみ表示する。クエリがある場合は一致したアプリと `systemItems` を最大 9 件表示し、Web Search を末尾に追加する。Web 検索モードでは Web Search のみ表示する。
 
 検索結果は入力変更ごとに作り直す。各行は icon、label、button press handler を持ち、クリック時は選択 index を更新して起動する。
 
@@ -105,7 +104,9 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 | `Down` / `Ctrl+j` | 選択を下へ移動 |
 | `Up` / `Ctrl+k` | 選択を上へ移動 |
 
-`_launchSelected()` は先に launcher を閉じて modal grab を解放し、アイテムの種類を判別する。`activate` 関数を持つ場合（システムアクション、eject）はそれを呼ぶ。アプリは desktop ID で `Shell.AppSystem` から検索し、通常は `Shell.App.activate()` で既存ウィンドウをアクティブにするか未起動アプリを起動する。Ctrl+Enter では GNOME Shell の New Window と同じ `open_new_window(-1)` を呼ぶ。アプリが見つからない場合は `item.info.launch([], null)` を使う。
+`_launchSelected()` は Web Search を空欄または項目名の部分一致で選ぶと、入力欄を消去して Web 検索モードに切り替える。それ以外の検索語では launcher を閉じ、エンコードした検索語を含む Google 検索 URI を既定のブラウザで開く。Web 検索モードでは入力後の Enter で検索する。アプリやアクションの起動時も先に launcher を閉じて modal grab を解放する。アプリは desktop ID で `Shell.AppSystem` から検索し、通常は `Shell.App.activate()`、Ctrl+Enter では `open_new_window(-1)` を呼ぶ。アプリが見つからない場合は `item.info.launch([], null)` を使う。
+
+Enter は `ClutterText::activate` で処理し、入力メソッドによる変換確定を優先する。Ctrl の状態は現在のイベントから取得する。
 
 根拠コード: `nuts-launcher@local/extension.js:435-497`
 
@@ -155,9 +156,9 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 根拠コード: `nuts-launcher@local/extension.js:318-340`
 
-### 空クエリ時はシステムアクションを末尾固定で表示する
+### Web Search は常に表示する
 
-空クエリ時のアプリ表示枠を `Math.max(0, MAX_RESULTS - systemItems.length)` に縮め、残り枠に eject アイテムとシステムアクションを必ず表示する。検索時はアプリと `systemItems` を混在させ、検索キーワードでフィルタリングする。
+空クエリ時は Web Search のみを表示し、入力時はアプリと `systemItems` を検索キーワードで絞り込んだ上で Web Search の枠を確保する。
 
 根拠コード: `nuts-launcher@local/extension.js:362-385`
 
@@ -184,7 +185,8 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
-- d0b2d5a feat(#26): add force quit actions for running apps
+- 9ece62f feat(#28): add web search to launcher
+- 46ec9c0 feat(#26): add force quit actions for running apps (#27)
 - d134e11 feat(#20): close launcher on outside click (#21)
 - c62eadf feat(#18): add suspend action to launcher (#19)
 - 33acfdf feat(#16): open new windows with ctrl enter (#17)
@@ -193,4 +195,3 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - ca4e986 fix(#9): restore launcher focus on GNOME 50 and install via symlink (#10)
 - 918734f fix: allow global shortcuts through the launcher's modal keyboard grab
 - 96db5d2 feat(#5): add logout, shutdown, and restart options to the launcher
-- 5419f6a fix(#1): stabilize launcher keyboard grab

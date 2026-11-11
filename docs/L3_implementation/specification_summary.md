@@ -68,15 +68,7 @@ export default class NutsLauncherExtension extends Extension {
 +----------------------------------------+
 |  Search applications...                |
 +----------------------------------------+
-|  [icon] Alacritty                      |
-|  [icon] Google Chrome                  |
-|  [icon] Files                          |
-|  [icon] Settings                       |
-|  [icon] Eject HD-PCTU3_White           |
-|  [icon] Suspend                        |
-|  [icon] Log Out                        |
-|  [icon] Shut Down                      |
-|  [icon] Restart                        |
+|  [icon] Web Search...                  |
 +----------------------------------------+
 ```
 
@@ -86,8 +78,8 @@ export default class NutsLauncherExtension extends Extension {
 - 選択中の行が視覚的に区別できること
 - ランチャーの外側をクリックすると閉じる
 - テーマ・設定 UI は不要
-- システムアクション（Suspend / Log Out / Shut Down / Restart）はリスト末尾に常時表示
-- 外付けデバイスが接続されている場合、デバイスごとに `Eject <名前>` をシステムアクションの直前に表示（デバイスがなければ表示しない）
+- システムアクションと接続中デバイスの eject は検索文字列に一致した場合に表示する
+- Web Search は検索文字列にかかわらず表示する
 
 ## アプリ一覧取得とシステムアクション
 
@@ -119,8 +111,10 @@ eject アイテムは `_buildEjectItems()` で `Show()` ごとに再構築する
 - 入力変更ごとに即時更新
 - case-insensitive 部分一致
 - 検索対象: display name, app name, desktop id
-- 入力が空の場合: 表示枠に収まるアプリ + 全強制終了・eject・システムアクションを末尾に表示（アクションだけで 10 件を超える場合は全件表示）
-- 入力がある場合: 部分一致するアプリ、強制終了、eject、システムアクションを最大 10 件表示。強制終了は `force quit` / アプリ名で検索可
+- 入力が空の場合: Web Search のみ表示
+- 入力がある場合: 部分一致するアプリ、強制終了、eject、システムアクションを最大 9 件表示し、Web Search を追加する。強制終了は `force quit` / アプリ名で検索可
+- 空欄または Web Search の項目名に一致する文字列で Web Search を選ぶと入力を消去し、Web 検索モードに切り替える。それ以外の文字列から選ぶと、その文字列で Google 検索を開く。Web 検索モードでは入力後の Enter で検索する
+- Enter は入力メソッドによる変換確定を優先する
 
 fuzzy search・使用頻度学習は後回し。
 
@@ -131,7 +125,7 @@ fuzzy search・使用頻度学習は後回し。
 | キー | 動作 |
 |------|------|
 | `Esc` | 閉じる（必須） |
-| `Enter` | launcher を閉じ、選択中のアプリをアクティブ化または起動する（必須） |
+| `Enter` | 入力メソッドが処理しない場合、選択中の項目を実行する |
 | `Ctrl+Enter` | 選択中のアプリに新しいウィンドウを要求する |
 | `Up` | 選択を上へ移動（必須） |
 | `Down` | 選択を下へ移動（必須） |
@@ -212,6 +206,6 @@ FepSwitcher.SwitchToUs() を呼んだ後、`sleep 0.05` を挟んで NutsLaunche
 - `ydotool` integration
 - `org.gnome.Shell.Eval` 利用
 - GNOME Search Provider integration
-- Web 検索 / ファイル検索
+- ファイル検索
 - 設定画面 / テーマ切替
 - fuzzy search / 使用頻度学習 / 最近使ったアプリ履歴
