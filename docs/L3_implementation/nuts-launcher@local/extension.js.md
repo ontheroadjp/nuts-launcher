@@ -84,15 +84,19 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 
 ### 検索・結果表示
 
-検索は display name と desktop id の case-insensitive 部分一致。表示件数は `MAX_RESULTS`（10）に制限する。通常検索では Web Search の枠を確保する。
+検索は display name と desktop id の case-insensitive 部分一致。表示件数は `MAX_RESULTS`（10）に制限する。
 
 強制終了、eject、システムアクションの順に連結し（以下 `systemItems`）、まとめて扱う。
 
-クエリが空の場合は Web Search のみ表示する。クエリがある場合は一致したアプリと `systemItems` を最大 9 件表示し、Web Search を末尾に追加する。Web 検索モードでは Web Search のみ表示する。
+通常検索でクエリが空の場合は結果を表示しない。クエリがある場合はアプリと `systemItems` の一致に加え、Web Search と Amazon Search を表示する。検索項目の名前に一致する場合は項目を上位に置き、先頭一致を部分一致より優先する。専用検索モードでは選択した検索項目のみ表示する。
 
 通常検索では、有効な四則演算式の結果を先頭に表示し、選択するとクリップボードにコピーする。整数部分が 4 桁以上の結果は、その下にカンマ区切りの候補も表示する。続いて入力式と結果を連結した候補を表示し、式または結果に 4 桁以上の整数部分があればカンマ区切り版も表示する。式付き候補では `*` と `/` を `×` と `÷` で表示する。各候補は選択した形式でコピーする。小数、符号、括弧と演算子の優先順位に対応する。式は専用パーサーで処理し、任意の JavaScript は実行しない。不完全な式、ゼロ除算、非有限の結果は通常の検索として扱う。入力長は 512 文字、入れ子は 100 段階までに制限する。
 
 根拠コード: `nuts-launcher@local/extension.js:26-89`, `nuts-launcher@local/extension.js:535-585`
+
+Amazon Search は Font Awesome の Amazon SVG を白色で表示する。アイコンの出典とライセンスは同梱の `amazon-icon-license.txt` に記載する。
+
+根拠コード: `nuts-launcher@local/extension.js:105-113`, `nuts-launcher@local/extension.js:542-599`
 
 HTTP / HTTPS URL は検証後に先頭の Open URL 項目として表示する。`open url`、`http`、`https` に一致する検索文字列では Open URL の入力モードへの入口も表示する。入力モードでは URL にスキームがなければ `https://` を補い、有効な URL を先頭に表示する。空欄・無効な URL・他のスキームは開かない。検索結果は最大 10 件とする。
 
@@ -113,6 +117,10 @@ HTTP / HTTPS URL は検証後に先頭の Open URL 項目として表示する�
 `_launchSelected()` は Web Search を空欄または項目名の部分一致で選ぶと、入力欄を消去して Web 検索モードに切り替える。それ以外の検索語では launcher を閉じ、エンコードした検索語を含む Google 検索 URI を既定のブラウザで開く。Web 検索モードでは入力後の Enter で検索する。アプリやアクションの起動時も先に launcher を閉じて modal grab を解放する。アプリは desktop ID で `Shell.AppSystem` から検索し、通常は `Shell.App.activate()`、Ctrl+Enter では `open_new_window(-1)` を呼ぶ。アプリが見つからない場合は `item.info.launch([], null)` を使う。
 
 Open URL の入口を選ぶと入力欄を消去して URL 入力モードに切り替える。有効な URL 項目を選ぶと launcher を閉じて既定のブラウザで開き、失敗時はログと通知で報告する。Web Search と Open URL は GNOME Shell の起動コンテキストを渡してブラウザのアクティブ化を要求する。表示・非表示時にモードをリセットする。
+
+Amazon Search は項目名に一致する検索語で選ぶと入力欄を消去し Amazon 検索モードに切り替える。それ以外の検索語では URL エンコードして Amazon.co.jp の検索結果を既定のブラウザで開く。専用モードでも入力後の Enter で検索する。
+
+根拠コード: `nuts-launcher@local/extension.js:727-756`
 
 Enter は `ClutterText::activate` で処理し、入力メソッドによる変換確定を優先する。Ctrl の状態は現在のイベントから取得する。
 
@@ -166,7 +174,7 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ### 通常の検索では Web Search を表示する
 
-通常モードでは空クエリ時に Web Search のみを表示し、入力時はアプリと `systemItems` を絞り込んだ上で Web Search の枠を確保する。URL 入力モードでは Open URL を表示する。
+通常モードでは空クエリ時に結果を表示しない。入力時はアプリと `systemItems` を絞り込み、Web Search と Amazon Search を表示する。URL 入力モードでは Open URL を表示する。
 
 根拠コード: `nuts-launcher@local/extension.js:471-500`
 

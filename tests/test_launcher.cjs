@@ -37,6 +37,7 @@ function fixture() {
     launcher._ejectItems = [];
     launcher._systemItems = [];
     launcher._webSearchItem = { displayName: 'Web Search...' };
+    launcher._amazonSearchItem = { displayName: 'Amazon Search...' };
     launcher._openUrlItem = { displayName: 'Open URL...' };
     launcher._webSearchMode = false;
     launcher._urlMode = false;
@@ -82,21 +83,30 @@ test('search matches names and desktop IDs without case sensitivity and limits r
     launcher._updateResults('REBOOT');
     assert.equal(launcher._filteredApps[0].displayName, 'Restart');
     launcher._updateResults('absent');
-    assert.equal(launcher._filteredApps.length, 1);
+    assert.equal(launcher._filteredApps.length, 2);
     assert.equal(launcher._filteredApps[0].displayName, 'Web Search...');
 });
 
-test('empty search displays only web search', () => {
+test('empty search displays no results', () => {
     const { launcher } = fixture();
     launcher._apps = Array.from({ length: 10 }, (_, i) => ({ displayName: `App ${i}` }));
     launcher._systemItems = Array.from({ length: 4 }, (_, i) => ({ displayName: `Action ${i}` }));
     launcher._updateResults('');
-    assert.equal(launcher._filteredApps.length, 1);
-    assert.equal(launcher._filteredApps[0].displayName, 'Web Search...');
+    assert.equal(launcher._filteredApps.length, 0);
     launcher._systemItems = Array.from({ length: 11 }, (_, i) => ({ displayName: `Action ${i}` }));
     launcher._updateResults('');
-    assert.equal(launcher._filteredApps.length, 1);
-    assert.equal(launcher._filteredApps[0].displayName, 'Web Search...');
+    assert.equal(launcher._filteredApps.length, 0);
+});
+
+test('matching search items appear first', () => {
+    const { launcher } = fixture();
+    launcher._apps = [{ displayName: 'Amazon app', searchKey: 'amazon app', desktopId: '' }];
+    for (const query of ['a', 'am', 'ama', 'AMAZON']) {
+        launcher._updateResults(query);
+        assert.equal(launcher._filteredApps[0], launcher._amazonSearchItem, query);
+    }
+    launcher._updateResults('web');
+    assert.equal(launcher._filteredApps[0], launcher._webSearchItem);
 });
 
 test('calculator respects precedence, parentheses, signs and decimals', () => {
@@ -176,14 +186,14 @@ test('calculator copies the result and preserves search modes and result limit',
     }));
     launcher._updateResults('1+2');
     assert.equal(launcher._filteredApps.length, 10);
-    assert.equal(launcher._filteredApps.at(-1), launcher._webSearchItem);
+    assert.equal(launcher._filteredApps.at(-2), launcher._webSearchItem);
     launcher._launchSelected();
     assert.deepEqual(calls, ['hide', ['clipboard', '3']]);
     launcher._apps = launcher._apps.map(app => ({ ...app, searchKey: '1000+0' }));
     launcher._updateResults('1000+0');
     assert.equal(launcher._filteredApps.length, 10);
     assert.equal(launcher._filteredApps[1].displayName, '= 1,000');
-    assert.equal(launcher._filteredApps.at(-1), launcher._webSearchItem);
+    assert.equal(launcher._filteredApps.at(-2), launcher._webSearchItem);
     launcher._webSearchMode = true;
     launcher._updateResults('1+2');
     assert.equal(launcher._filteredApps[0], launcher._webSearchItem);
@@ -202,7 +212,7 @@ test('valid web URLs are first and open directly while web search remains availa
     Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
     launcher._updateResults(query);
     assert.equal(launcher._filteredApps[0].displayName, `Open URL: ${query}`);
-    assert.equal(launcher._filteredApps.at(-1), launcher._webSearchItem);
+    assert.equal(launcher._filteredApps.at(-2), launcher._webSearchItem);
     launcher._launchSelected();
     assert.deepEqual(calls, ['hide', query]);
     query = 'http://example.com';
@@ -280,15 +290,15 @@ test('URL mode does not launch invalid input or unsupported schemes', () => {
     }
 });
 
-test('web search stays selected after empty activation and opens an encoded query', () => {
+test('web search stays selected in its mode and opens an encoded query', () => {
     const { launcher, Gio } = fixture();
     const calls = [];
-    let query = '';
+    let query = 'web';
     launcher._entry = { get_text: () => query, set_text: value => { query = value; launcher._onSearchChanged(); },
         grab_key_focus: () => calls.push('focus') };
     launcher._hide = () => calls.push('hide');
     Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
-    launcher._updateResults('');
+    launcher._updateResults(query);
     launcher._launchSelected();
     assert.deepEqual(calls, ['focus']);
     query = '日本語 & cats';
@@ -319,6 +329,24 @@ test('matching the web search name enters web mode, while other queries search i
     launcher._updateResults(query);
     launcher._launchSelected();
     assert.equal(calls[3], 'https://www.google.com/search?q=%E3%81%82%E3%81%84%E3%81%BF%E3%82%87%E3%82%93');
+});
+
+test('Amazon search enters its mode and opens encoded queries', () => {
+    const { launcher, Gio } = fixture();
+    const calls = [];
+    let query = 'ama';
+    launcher._entry = { get_text: () => query, set_text: value => { query = value; launcher._onSearchChanged(); },
+        grab_key_focus: () => calls.push('focus') };
+    launcher._hide = () => calls.push('hide');
+    Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
+    launcher._updateResults(query);
+    launcher._launchSelected();
+    assert.equal(launcher._amazonSearchMode, true);
+    query = '日本語 & cats';
+    launcher._onSearchChanged();
+    assert.equal(launcher._filteredApps[launcher._selectedIndex], launcher._amazonSearchItem);
+    launcher._launchSelected();
+    assert.deepEqual(calls, ['focus', 'hide', 'https://www.amazon.co.jp/s?k=%E6%97%A5%E6%9C%AC%E8%AA%9E%20%26%20cats']);
 });
 
 test('keyboard navigation clamps selection and dispatches launch and escape', () => {
