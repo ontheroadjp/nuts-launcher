@@ -134,7 +134,34 @@ test('calculator adds a selectable comma-separated result for four or more integ
         assert.equal(copies.at(-1), grouped);
     }
     launcher._updateResults('999+0');
-    assert.equal(launcher._filteredApps[1], launcher._webSearchItem);
+    assert.equal(launcher._filteredApps[1].displayName, '999+0=999');
+    assert.equal(launcher._filteredApps[2], launcher._webSearchItem);
+});
+
+test('calculator displays and copies plain and grouped equations', () => {
+    const { launcher, context } = fixture();
+    const copies = [];
+    context.St.ClipboardType = { CLIPBOARD: 'clipboard' };
+    context.St.Clipboard = { get_default: () => ({ set_text: (_type, value) => copies.push(value) }) };
+    launcher._hide = () => {};
+    launcher._updateResults('1234+456');
+    assert.deepEqual(Array.from(launcher._filteredApps.slice(0, 4), item => item.displayName),
+        ['= 1690', '= 1,690', '1234+456=1690', '1,234+456=1,690']);
+    launcher._selectedIndex = 3;
+    launcher._launchSelected();
+    assert.equal(copies[0], '1,234+456=1,690');
+    launcher._updateResults('1234-1234');
+    assert.equal(launcher._filteredApps[1].displayName, '1234-1234=0');
+    assert.equal(launcher._filteredApps[2].displayName, '1,234-1,234=0');
+    launcher._updateResults('123+456');
+    assert.equal(launcher._filteredApps[1].displayName, '123+456=579');
+    assert.equal(launcher._filteredApps[2], launcher._webSearchItem);
+    launcher._updateResults('1234*2/4');
+    assert.equal(launcher._filteredApps[1].displayName, '1234×2÷4=617');
+    assert.equal(launcher._filteredApps[2].displayName, '1,234×2÷4=617');
+    launcher._selectedIndex = 2;
+    launcher._launchSelected();
+    assert.equal(copies.at(-1), '1,234×2÷4=617');
 });
 
 test('calculator copies the result and preserves search modes and result limit', () => {

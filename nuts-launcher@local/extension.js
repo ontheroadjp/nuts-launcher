@@ -81,6 +81,11 @@ function calculate(query) {
     }
 }
 
+function groupDigits(value) {
+    return value.replace(/\d+(?:\.\d*)?|\.\d+/g, number =>
+        number.replace(/^\d+/, integer => integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',')));
+}
+
 export default class NutsLauncherExtension extends Extension {
     enable() {
         this._visible = false;
@@ -559,13 +564,18 @@ export default class NutsLauncherExtension extends Extension {
         if (!this._urlMode && !this._webSearchMode) {
             const result = calculate(query);
             if (result !== null) {
-                const grouped = result.replace(/^(\-?\d+)(?=\.|$)/, integer =>
-                    integer.replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+                const grouped = /e/i.test(result) ? result : groupDigits(result);
                 const values = grouped === result ? [result] : [result, grouped];
+                const displayQuery = query.replace(/\*/g, '×').replace(/\//g, '÷');
+                const equation = `${displayQuery}=${result}`;
+                const groupedEquation = `${groupDigits(displayQuery)}=${grouped}`;
+                values.push(equation);
+                if (groupedEquation !== equation)
+                    values.push(groupedEquation);
                 for (const value of values.reverse()) {
                     if (results.length === MAX_RESULTS)
                         results.splice(MAX_RESULTS - 2, 1);
-                    results.unshift({ displayName: `= ${value}`, icon: Gio.ThemedIcon.new('accessories-calculator-symbolic'),
+                    results.unshift({ displayName: value.includes('=') ? value : `= ${value}`, icon: Gio.ThemedIcon.new('accessories-calculator-symbolic'),
                         activate: () => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, value) });
                 }
             }
