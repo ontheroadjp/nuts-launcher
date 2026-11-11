@@ -1,80 +1,20 @@
 # L0 Policy: Nuts Launcher
 
-## 技術選定ポリシー
+## 技術方針
 
-### GNOME Shell extension として実装する理由
+- Ubuntu 24.04 LTS / GNOME Wayland 環境に適した仕組みを選ぶ。
+- GNOME Shell extension として、利用可能な標準の仕組みを優先する。
+- extension 内で外部コマンドや Node.js に依存しない。
+- 複数の GNOME Shell version に対応する際は、可能な限り API の有無に基づいて差異を扱う。
 
-GNOME Shell extension は GNOME Shell プロセス内で動作するため、Shell の内部 API（St, Clutter, Main 等）に直接アクセスでき、DBus サービスの登録も安定して行える。
+## 責務と安全性
 
-根拠: `nuts-launcher-local-issue.md:165-178`
+- FEP/IME 切替はこの extension で行わず、`FepSwitcher` に委ねる。`FepSwitcher` のコードは変更しない。
+- `org.gnome.Shell.Eval` を利用せず、任意コード実行 API を提供しない。
+- extension の無効化時は、登録した DBus object、bus name、signal、UI などのリソースを解放する。
+- X11 を前提とする操作ツールに依存しない。
 
-### GJS / Gio / St / Clutter のみ使用する
+## 変更の判断
 
-外部コマンドや Node.js に依存しない。GNOME Shell extension 内で利用可能な標準ライブラリのみで完結させる。
-
-根拠: `nuts-launcher-local-issue.md:362-366`
-
-### GNOME 45+ ESM import 形式を使用する
-
-Ubuntu 24.04 LTS の GNOME Shell version に合わせる。古い `imports.ui.main` 形式ではなく ESM import 形式を使用する。
-
-```js
-import Gio from 'gi://Gio';
-import St from 'gi://St';
-import Clutter from 'gi://Clutter';
-import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
-```
-
-根拠: `nuts-launcher-local-issue.md:491-502`
-
-## セキュリティ方針
-
-### DBus API の公開範囲
-
-提供する DBus interface は `Show()` / `Hide()` / `Toggle()` のみ。任意コード実行 API（`Eval` 相当）は提供しない。
-
-根拠: `nuts-launcher-local-issue.md:191-213`
-
-### disable 時のリソース解放
-
-`disable()` で必ず UI actor の destroy、DBus object の unexport、bus name の unown、signal handler の disconnect を行う。cleanup 漏れは extension reload 時の破損を招く。
-
-根拠: `nuts-launcher-local-issue.md:506-513`
-
-## パフォーマンス要件
-
-- 検索はインクリメンタルに更新されること（入力変更ごとに即時更新）
-- アプリ一覧取得は `enable` 時にキャッシュし、`Show()` 時に必要なら軽く更新する設計でもよい
-- 初期実装ではシンプルさを優先する
-
-根拠: `nuts-launcher-local-issue.md:264-284`, `nuts-launcher-local-issue.md:327-333`
-
-## 禁止事項
-
-- `org.gnome.Shell.Eval` の利用（環境依存で動作不安定）
-- X11 前提ツール（`xdotool` 等）の利用
-- `FepSwitcher` への変更
-- Search Light の fork またはコード変更
-- 設定 UI の実装
-- 外部コマンド依存
-
-根拠: `nuts-launcher-local-issue.md:542-556`
-
-## スコープ外（将来実装候補）
-
-以下はこの実装では対象外だが、将来の拡張として検討可能。
-
-- fuzzy search（現状は case-insensitive 部分一致）
-- 最近使ったアプリ優先表示
-- 使用頻度学習
-- multi-monitor 対応（現状は primary monitor のみ）
-- `Ctrl+j` / `Ctrl+k` キーバインド
-
-根拠: `nuts-launcher-local-issue.md:281-285`, `nuts-launcher-local-issue.md:297-299`
-
-### GNOME Shell 46 と 50 をサポートする
-
-GNOME Shell 46 と 50 を単一のコードでサポートする。両 version で API が異なる場合は、version 番号ではなく API の有無を確認して処理を分岐する。
-
-根拠: `docs/L3_implementation/nuts-launcher@local/extension.js.md:110-114`
+- 機能や実装の追加は、軽量さ、応答性、シンプルさ、責務の分離を損なわないかを考慮する。
+- 具体的な対応機能、操作方法、対象 version、実装詳細は、変更可能な仕様として L1〜L3 で扱う。
