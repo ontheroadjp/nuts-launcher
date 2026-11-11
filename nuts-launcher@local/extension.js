@@ -34,6 +34,7 @@ export default class NutsLauncherExtension extends Extension {
         this._filteredApps = [];
         this._rows = [];
         this._ejectItems = [];
+        this._forceQuitItems = [];
 
         this._buildUI();
         this._loadApps();
@@ -49,6 +50,7 @@ export default class NutsLauncherExtension extends Extension {
         this._filteredApps = null;
         this._rows = null;
         this._ejectItems = null;
+        this._forceQuitItems = null;
     }
 
     // --- DBus lifecycle ---
@@ -193,6 +195,7 @@ export default class NutsLauncherExtension extends Extension {
 
     _show() {
         this._buildEjectItems();
+        this._buildForceQuitItems();
         this._entry.set_text('');
         this._selectedIndex = 0;
         this._updateResults('');
@@ -273,6 +276,30 @@ export default class NutsLauncherExtension extends Extension {
     }
 
     // --- App list ---
+
+    _buildForceQuitItems() {
+        this._forceQuitItems = Shell.AppSystem.get_default().get_running().map(app => {
+            const name = app.get_name();
+            return {
+                displayName: `Force Quit ${name}`,
+                searchKey: `force quit ${name}`.toLowerCase(),
+                desktopId: '',
+                icon: app.get_app_info()?.get_icon() ?? null,
+                activate: () => this._forceQuitApp(app, name),
+            };
+        });
+    }
+
+    _forceQuitApp(app, name) {
+        for (const window of app.get_windows()) {
+            try {
+                window.kill();
+            } catch (e) {
+                console.error(`NutsLauncher: failed to force quit ${name}:`, e);
+                Main.notifyError(`Failed to force quit ${name}`, e.message);
+            }
+        }
+    }
 
     _buildSystemItems() {
         const sa = SystemActions.getDefault();
@@ -382,7 +409,7 @@ export default class NutsLauncherExtension extends Extension {
 
     _updateResults(query) {
         const lq = query.toLowerCase();
-        const systemItems = [...this._ejectItems, ...this._systemItems];
+        const systemItems = [...this._forceQuitItems, ...this._ejectItems, ...this._systemItems];
         if (lq === '') {
             const appSlots = Math.max(0, MAX_RESULTS - systemItems.length);
             this._filteredApps = [
