@@ -112,11 +112,11 @@ HTTP / HTTPS URL は検証後に先頭の Open URL 項目として表示する�
 
 `_launchSelected()` は Web Search を空欄または項目名の部分一致で選ぶと、入力欄を消去して Web 検索モードに切り替える。それ以外の検索語では launcher を閉じ、エンコードした検索語を含む Google 検索 URI を既定のブラウザで開く。Web 検索モードでは入力後の Enter で検索する。アプリやアクションの起動時も先に launcher を閉じて modal grab を解放する。アプリは desktop ID で `Shell.AppSystem` から検索し、通常は `Shell.App.activate()`、Ctrl+Enter では `open_new_window(-1)` を呼ぶ。アプリが見つからない場合は `item.info.launch([], null)` を使う。
 
-Open URL の入口を選ぶと入力欄を消去して URL 入力モードに切り替える。有効な URL 項目を選ぶと launcher を閉じて既定のブラウザで開き、失敗時はログと通知で報告する。表示・非表示時にモードをリセットする。
+Open URL の入口を選ぶと入力欄を消去して URL 入力モードに切り替える。有効な URL 項目を選ぶと launcher を閉じて既定のブラウザで開き、失敗時はログと通知で報告する。Web Search と Open URL は GNOME Shell の起動コンテキストを渡してブラウザのアクティブ化を要求する。表示・非表示時にモードをリセットする。
 
 Enter は `ClutterText::activate` で処理し、入力メソッドによる変換確定を優先する。Ctrl の状態は現在のイベントから取得する。
 
-根拠コード: `nuts-launcher@local/extension.js:154-168`, `nuts-launcher@local/extension.js:551-657`
+根拠コード: `nuts-launcher@local/extension.js:228-236`, `nuts-launcher@local/extension.js:669-741`
 
 ## 重要な設計判断
 
