@@ -32,6 +32,11 @@ export default class NutsLauncherExtension extends Extension {
         this._showTimeoutId = null;
         this._selectedIndex = 0;
         this._webSearchMode = false;
+        this._urlMode = false;
+        this._openUrlItem = {
+            displayName: 'Open URL...',
+            icon: Gio.ThemedIcon.new('web-browser-symbolic'),
+        };
         this._webSearchItem = {
             displayName: 'Web Search...',
             icon: Gio.ThemedIcon.new('web-browser-symbolic'),
@@ -210,6 +215,7 @@ export default class NutsLauncherExtension extends Extension {
 
     _show() {
         this._webSearchMode = false;
+        this._urlMode = false;
         this._entry.hint_text = 'Search applications...';
         this._buildEjectItems();
         this._buildForceQuitItems();
@@ -231,6 +237,7 @@ export default class NutsLauncherExtension extends Extension {
 
     _hide() {
         this._webSearchMode = false;
+        this._urlMode = false;
         this._cancelQueuedShow();
         this._mainBox.hide();
         this._visible = false;
@@ -428,7 +435,23 @@ export default class NutsLauncherExtension extends Extension {
     _updateResults(query) {
         const lq = query.toLowerCase();
         const systemItems = [...this._forceQuitItems, ...this._ejectItems, ...this._systemItems];
-        if (lq === '' || this._webSearchMode) {
+        let urlItem = null;
+        const candidate = this._urlMode && query && !/^[a-z][a-z\d+.-]*:\/\//i.test(query)
+            ? `https://${query}` : query;
+        if (/^https?:\/\//i.test(candidate) && !/\s/.test(candidate)) {
+            try {
+                const uri = GLib.Uri.parse(candidate, GLib.UriFlags.NONE);
+                if (uri.get_host()) {
+                    urlItem = { displayName: `Open URL: ${query}`, url: candidate,
+                        icon: Gio.ThemedIcon.new('web-browser-symbolic') };
+                }
+            } catch (e) {
+                // Invalid URI input remains available as a web search.
+            }
+        }
+        if (this._urlMode) {
+            this._filteredApps = [this._openUrlItem];
+        } else if (lq === '' || this._webSearchMode) {
             this._filteredApps = [this._webSearchItem];
         } else {
             const filteredApps = this._apps.filter(a =>
@@ -439,11 +462,22 @@ export default class NutsLauncherExtension extends Extension {
             );
             this._filteredApps = [...filteredApps, ...filteredSys].slice(0, MAX_RESULTS - 1);
             this._filteredApps.push(this._webSearchItem);
+            if ('open url http https'.includes(lq)) {
+                if (this._filteredApps.length === MAX_RESULTS)
+                    this._filteredApps.splice(MAX_RESULTS - 2, 1);
+                this._filteredApps.splice(this._filteredApps.length - 1, 0, this._openUrlItem);
+            }
+        }
+
+        if (urlItem) {
+            if (this._filteredApps.length === MAX_RESULTS)
+                this._filteredApps.splice(MAX_RESULTS - 2, 1);
+            this._filteredApps.unshift(urlItem);
         }
 
         this._renderResults();
 
-        this._selectedIndex = this._webSearchMode
+        this._selectedIndex = this._webSearchMode && !urlItem
             ? this._filteredApps.indexOf(this._webSearchItem) : 0;
         this._highlightSelected();
     }
@@ -535,6 +569,28 @@ export default class NutsLauncherExtension extends Extension {
         const item = this._filteredApps[this._selectedIndex];
         if (!item)
             return;
+
+        if (item.url) {
+            this._hide();
+            try {
+                Gio.AppInfo.launch_default_for_uri(item.url, null);
+            } catch (e) {
+                console.error('NutsLauncher: failed to open URL:', e);
+                Main.notifyError('Open URL', 'Could not open the default browser');
+            }
+            return;
+        }
+
+        if (item === this._openUrlItem) {
+            if (!this._urlMode) {
+                this._urlMode = true;
+                this._webSearchMode = false;
+                this._entry.hint_text = 'URL 入力';
+                this._entry.set_text('');
+                this._entry.grab_key_focus();
+            }
+            return;
+        }
 
         if (item === this._webSearchItem) {
             const query = this._entry.get_text().trim();
