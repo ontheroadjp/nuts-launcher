@@ -116,6 +116,27 @@ test('calculator rejects malformed, non-finite and unsafe expressions', () => {
     }
 });
 
+test('calculator adds a selectable comma-separated result for four or more integer digits', () => {
+    const { launcher, context } = fixture();
+    const copies = [];
+    context.St.ClipboardType = { CLIPBOARD: 'clipboard' };
+    context.St.Clipboard = { get_default: () => ({ set_text: (_type, value) => copies.push(value) }) };
+    launcher._hide = () => {};
+    for (const [query, plain, grouped] of [
+        ['999+1', '1000', '1,000'], ['-1234.5*1', '-1234.5', '-1,234.5'],
+        ['1234567+0', '1234567', '1,234,567'],
+    ]) {
+        launcher._updateResults(query);
+        assert.equal(launcher._filteredApps[0].displayName, `= ${plain}`);
+        assert.equal(launcher._filteredApps[1].displayName, `= ${grouped}`);
+        launcher._selectedIndex = 1;
+        launcher._launchSelected();
+        assert.equal(copies.at(-1), grouped);
+    }
+    launcher._updateResults('999+0');
+    assert.equal(launcher._filteredApps[1], launcher._webSearchItem);
+});
+
 test('calculator copies the result and preserves search modes and result limit', () => {
     const { launcher, context } = fixture();
     const calls = [];
@@ -130,6 +151,11 @@ test('calculator copies the result and preserves search modes and result limit',
     assert.equal(launcher._filteredApps.at(-1), launcher._webSearchItem);
     launcher._launchSelected();
     assert.deepEqual(calls, ['hide', ['clipboard', '3']]);
+    launcher._apps = launcher._apps.map(app => ({ ...app, searchKey: '1000+0' }));
+    launcher._updateResults('1000+0');
+    assert.equal(launcher._filteredApps.length, 10);
+    assert.equal(launcher._filteredApps[1].displayName, '= 1,000');
+    assert.equal(launcher._filteredApps.at(-1), launcher._webSearchItem);
     launcher._webSearchMode = true;
     launcher._updateResults('1+2');
     assert.equal(launcher._filteredApps[0], launcher._webSearchItem);

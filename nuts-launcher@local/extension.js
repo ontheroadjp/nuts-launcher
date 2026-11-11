@@ -559,10 +559,15 @@ export default class NutsLauncherExtension extends Extension {
         if (!this._urlMode && !this._webSearchMode) {
             const result = calculate(query);
             if (result !== null) {
-                if (results.length === MAX_RESULTS)
-                    results.splice(MAX_RESULTS - 2, 1);
-                results.unshift({ displayName: `= ${result}`, icon: Gio.ThemedIcon.new('accessories-calculator-symbolic'),
-                    activate: () => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, result) });
+                const grouped = result.replace(/^(\-?\d+)(?=\.|$)/, integer =>
+                    integer.replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+                const values = grouped === result ? [result] : [result, grouped];
+                for (const value of values.reverse()) {
+                    if (results.length === MAX_RESULTS)
+                        results.splice(MAX_RESULTS - 2, 1);
+                    results.unshift({ displayName: `= ${value}`, icon: Gio.ThemedIcon.new('accessories-calculator-symbolic'),
+                        activate: () => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, value) });
+                }
             }
         }
         return results;
