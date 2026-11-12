@@ -32,6 +32,7 @@ function fixture() {
         ShellMountOperation: {}, Extension: class {}, console };
     const Launcher = vm.runInNewContext(`${source}\nNutsLauncherExtension`, context);
     const launcher = new Launcher();
+    launcher._config = { maxResults: 10 };
     launcher._apps = [];
     launcher._forceQuitItems = [];
     launcher._ejectItems = [];
@@ -514,4 +515,61 @@ test('keyboard grab checks both supported GNOME API variants', () => {
     assert.equal(launcher._hasKeyboardGrab({ get_seat_state: () => 0 }), false);
     assert.equal(launcher._hasKeyboardGrab({ is_revoked: () => false }), true);
     assert.equal(launcher._hasKeyboardGrab({ is_revoked: () => true }), false);
+});
+
+
+test('configured result limit is applied without dropping fallback actions', () => {
+    const { launcher } = fixture();
+    launcher._config.maxResults = 8;
+    launcher._apps = Array.from({ length: 20 }, (_, i) => ({
+        displayName: `Editor ${i}`, searchKey: `editor ${i}`, desktopId: '',
+    }));
+    launcher._updateResults('editor');
+    assert.equal(launcher._filteredApps.length, 8);
+    assert.ok(launcher._filteredApps.includes(launcher._openUrlItem));
+    launcher._updateResults('1234*2');
+    assert.equal(launcher._filteredApps.length, 8);
+    assert.ok(launcher._filteredApps.includes(launcher._openUrlItem));
+    launcher._config.maxResults = 15;
+    launcher._updateResults('editor');
+    assert.equal(launcher._filteredApps.length, 15);
+});
+
+test('configuration persists, validates values, and preserves unknown fields', () => {
+    const files = new Map();
+    const GLib = {
+        FileTest: { EXISTS: 1 },
+        file_test: path => files.has(path),
+        file_get_contents: path => [true, new TextEncoder().encode(files.get(path))],
+        mkdir_with_parents: () => 0,
+        path_get_dirname: () => 'config',
+        file_set_contents: (path, value) => { files.set(path, value); return true; },
+    };
+    const source = fs.readFileSync(path.join(__dirname, '../nuts-launcher@local/config.js'), 'utf8')
+        .replace(/^import .*;\s*$/gm, '').replace('export class Config', 'class Config');
+    const errors = [];
+    const Config = vm.runInNewContext(`${source}\nConfig`,
+        { GLib, TextDecoder, console: { error: (...args) => errors.push(args) } });
+    const first = new Config('config/config.json');
+    assert.equal(first.maxResults, 10);
+    assert.deepEqual(JSON.parse(files.get('config/config.json')), { maxResults: 10 });
+    first.setMaxResults(15);
+    assert.equal(new Config('config/config.json').maxResults, 15);
+    files.set('config/config.json', '{"future":true,"maxResults":9}');
+    const second = new Config('config/config.json');
+    second.setMaxResults(12);
+    assert.deepEqual(JSON.parse(files.get('config/config.json')), { future: true, maxResults: 12 });
+    for (const value of [7, 101, 1.5, '10', null]) {
+        files.set('config/config.json', JSON.stringify({ maxResults: value }));
+        assert.equal(new Config('config/config.json').maxResults, 10);
+        assert.throws(() => second.setMaxResults(value), { name: 'RangeError' });
+    }
+    files.set('config/config.json', '{broken');
+    assert.equal(new Config('config/config.json').maxResults, 10);
+    assert.equal(errors.length, 1);
+    GLib.file_set_contents = () => false;
+    assert.equal(new Config('config/unwritable.json').maxResults, 10);
+    assert.equal(errors.length, 2);
+    assert.throws(() => second.setMaxResults(20));
+    assert.equal(second.maxResults, 12);
 });

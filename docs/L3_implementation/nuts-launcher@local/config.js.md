@@ -1,0 +1,15 @@
+# L3 Per-file: nuts-launcher@local/config.js
+
+## 目的・役割
+
+ランチャーの永続設定を読み書きし、検証済みの設定値を提供する。設定ファイルの場所は GLib のユーザー設定ディレクトリにある `nuts-launcher/config.json` で、XDG の設定に従う。根拠コード: `nuts-launcher@local/config.js:7-12`。
+
+## 動作と設計
+
+生成時に設定を読み込み、ファイルが存在しなければ既定値を作成する。読み込み・作成の失敗はログに記録し、既定値で動作する。不正な JSON やオブジェクト以外の値は採用しない。根拠コード: `nuts-launcher@local/config.js:14-35`。
+
+`maxResults` は 8〜100 の整数で、既定値は 10。更新時には他の設定項目を保持して保存し、成功後にメモリ上の値を更新する。書き込み失敗は呼び出し元に伝える。根拠コード: `nuts-launcher@local/config.js:3-5`, `nuts-launcher@local/config.js:37-52`。
+
+## 統合と制限
+
+`extension.js` が有効化時に生成し、検索結果の上限として参照する。実行中の設定ファイル変更は自動監視しないため、反映には extension の再有効化が必要。根拠コード: `nuts-launcher@local/extension.js:90-91`, `nuts-launcher@local/extension.js:551-553`。

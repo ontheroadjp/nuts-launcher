@@ -10,7 +10,7 @@ GNOME Shell extension `nuts-launcher@local` のメイン実装。DBus サービ�
 
 ### ライフサイクル
 
-`enable()` は内部状態を初期化し、UI 作成、アプリ一覧キャッシュ、システムアクション構築、DBus export を行う。
+`enable()` は永続設定を読み込み、内部状態を初期化し、UI 作成、アプリ一覧キャッシュ、システムアクション構築、DBus export を行う。
 
 ```
 enable()
@@ -84,7 +84,7 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 
 ### 検索・結果表示
 
-検索は display name と desktop id の case-insensitive 部分一致。表示件数は `MAX_RESULTS`（10）に制限する。
+検索は display name と desktop id の case-insensitive 部分一致。表示件数は `Config.maxResults` に制限する。既定値は 10、許容範囲は 8〜100。設定は extension 有効化時に読み込む。根拠コード: `nuts-launcher@local/extension.js:90-91`, `nuts-launcher@local/extension.js:551-606`。
 
 強制終了、eject、システムアクションの順に連結し（以下 `systemItems`）、まとめて扱う。
 

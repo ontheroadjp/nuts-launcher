@@ -7,6 +7,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as SystemActions from 'resource:///org/gnome/shell/misc/systemActions.js';
 import * as ShellMountOperation from 'resource:///org/gnome/shell/ui/shellMountOperation.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Config } from './config.js';
 
 const DBUS_IFACE = `
 <node>
@@ -19,7 +20,6 @@ const DBUS_IFACE = `
 
 const BUS_NAME = 'org.gnome.Shell.Extensions.NutsLauncher';
 const OBJECT_PATH = '/org/gnome/Shell/Extensions/NutsLauncher';
-const MAX_RESULTS = 10;
 const SHOW_GRAB_DELAY_MS = 120;
 
 // Parse only arithmetic, without evaluating the input as JavaScript.
@@ -88,6 +88,7 @@ function groupDigits(value) {
 
 export default class NutsLauncherExtension extends Extension {
     enable() {
+        this._config = new Config();
         this._visible = false;
         this._modalGrab = null;
         this._entryTextChangedId = null;
@@ -132,6 +133,7 @@ export default class NutsLauncherExtension extends Extension {
         this._unexportDBus();
         this._destroyUI();
 
+        this._config = null;
         this._apps = null;
         this._filteredApps = null;
         this._rows = null;
@@ -548,6 +550,7 @@ export default class NutsLauncherExtension extends Extension {
 
     _buildSearchResults(query, urlItem) {
         const lq = query.toLowerCase();
+        const maxResults = this._config.maxResults;
         const systemItems = [...this._forceQuitItems, ...this._ejectItems, ...this._systemItems];
         let results;
         if (this._urlMode) {
@@ -579,12 +582,12 @@ export default class NutsLauncherExtension extends Extension {
             const otherFallbackItems = fallbackItems.filter(item => !matches.includes(item));
             let ordinaryCount = 0;
             results = matches.filter(item => fallbackItems.includes(item) ||
-                ordinaryCount++ < MAX_RESULTS - fallbackItems.length);
+                ordinaryCount++ < maxResults - fallbackItems.length);
             results.push(...otherFallbackItems);
         }
 
         if (urlItem) {
-            if (results.length === MAX_RESULTS)
+            if (results.length === maxResults)
                 results.splice(results.findLastIndex(item => ![this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem, this._openUrlItem].includes(item)), 1);
             results.unshift(urlItem);
         }
@@ -600,7 +603,7 @@ export default class NutsLauncherExtension extends Extension {
                 if (groupedEquation !== equation)
                     values.push(groupedEquation);
                 for (const value of values.reverse()) {
-                    if (results.length === MAX_RESULTS)
+                    if (results.length === maxResults)
                         results.splice(results.findLastIndex(item => ![this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem, this._openUrlItem].includes(item)), 1);
                     results.unshift({ displayName: value.includes('=') ? value : `= ${value}`, icon: Gio.ThemedIcon.new('accessories-calculator-symbolic'),
                         activate: () => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, value) });
