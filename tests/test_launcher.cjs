@@ -33,6 +33,9 @@ function fixture() {
     const Launcher = vm.runInNewContext(`${source}\nNutsLauncherExtension`, context);
     const launcher = new Launcher();
     launcher._config = { maxResults: 10 };
+    const configSource = fs.readFileSync(path.join(__dirname, '../nuts-launcher@local/config.js'), 'utf8')
+        .replace(/^import .*;\s*$/gm, '').replace('export class Config', 'class Config');
+    launcher._searchConfig = vm.runInNewContext(`${configSource}\nDEFAULT_SEARCHES`, {});
     launcher._apps = [];
     launcher._forceQuitItems = [];
     launcher._ejectItems = [];
@@ -552,15 +555,29 @@ test('configuration persists, validates values, and preserves unknown fields', (
         { GLib, TextDecoder, console: { error: (...args) => errors.push(args) } });
     const first = new Config('config/config.json');
     assert.equal(first.maxResults, 10);
-    assert.deepEqual(JSON.parse(files.get('config/config.json')), { maxResults: 10 });
+    const initial = JSON.parse(files.get('config/config.json'));
+    assert.equal(initial.general.maxResults, 10);
+    assert.deepEqual(Object.keys(initial.customSearch), ['openUrl', 'web', 'amazon', 'youtube']);
     first.setMaxResults(15);
     assert.equal(new Config('config/config.json').maxResults, 15);
     files.set('config/config.json', '{"future":true,"maxResults":9}');
     const second = new Config('config/config.json');
     second.setMaxResults(12);
-    assert.deepEqual(JSON.parse(files.get('config/config.json')), { future: true, maxResults: 12 });
+    const updated = JSON.parse(files.get('config/config.json'));
+    assert.equal(updated.future, true);
+    assert.equal(updated.general.maxResults, 12);
+    assert.equal(updated.customSearch.web.enabled, true);
+    assert.equal('maxResults' in updated, false);
+    files.set('config/config.json', JSON.stringify({ maxResults: 14, searches: { web: { enabled: false } } }));
+    const migrated = new Config('config/config.json');
+    assert.equal(migrated.maxResults, 14);
+    assert.equal(migrated.searches.web.enabled, false);
+    const savedMigration = JSON.parse(files.get('config/config.json'));
+    assert.equal(savedMigration.general.maxResults, 14);
+    assert.equal(savedMigration.customSearch.web.enabled, false);
+    assert.equal('searches' in savedMigration, false);
     for (const value of [7, 101, 1.5, '10', null]) {
-        files.set('config/config.json', JSON.stringify({ maxResults: value }));
+        files.set('config/config.json', JSON.stringify({ general: { maxResults: value } }));
         assert.equal(new Config('config/config.json').maxResults, 10);
         assert.throws(() => second.setMaxResults(value), { name: 'RangeError' });
     }
@@ -572,4 +589,66 @@ test('configuration persists, validates values, and preserves unknown fields', (
     assert.equal(errors.length, 2);
     assert.throws(() => second.setMaxResults(20));
     assert.equal(second.maxResults, 12);
+});
+
+
+test('disabled search actions and direct URL are absent from results', () => {
+    const { launcher } = fixture();
+    for (const config of Object.values(launcher._searchConfig)) config.enabled = false;
+    launcher._updateResults('https://localhost');
+    assert.equal(launcher._filteredApps.length, 0);
+    launcher._updateResults('editor');
+    assert.equal(launcher._filteredApps.length, 0);
+    launcher._searchConfig.amazon.enabled = true;
+    launcher._updateResults('editor');
+    assert.deepEqual(Array.from(launcher._filteredApps), [launcher._amazonSearchItem]);
+});
+
+test('configured keywords enter search mode and configured URL receives encoded query', () => {
+    const { launcher, Gio } = fixture();
+    const opened = [];
+    launcher._amazonSearchItem.displayName = 'Shopping...';
+    launcher._amazonSearchItem.searchKey = 'shop';
+    launcher._searchConfig.amazon.url = 'https://localhost/find?q={query}';
+    let query = 'shop';
+    launcher._entry = { get_text: () => query, set_text: value => { query = value; }, grab_key_focus: () => {} };
+    launcher._hide = () => {};
+    Gio.AppInfo.launch_default_for_uri = uri => opened.push(uri);
+    launcher._updateResults(query);
+    assert.equal(launcher._filteredApps[0], launcher._amazonSearchItem);
+    launcher._launchSelected();
+    assert.equal(launcher._amazonSearchMode, true);
+    query = 'tea & cake';
+    launcher._launchSelected();
+    assert.deepEqual(opened, ['https://localhost/find?q=tea%20%26%20cake']);
+});
+
+
+test('search icons accept themed names and image paths', () => {
+    const { launcher, Gio, context } = fixture();
+    launcher.path = 'extension';
+    context.GLib.path_is_absolute = path => path.startsWith(String.fromCharCode(47));
+    context.GLib.build_filenamev = parts => parts.join('/');
+    Gio.File = { new_for_path: path => ({ path }) };
+    Gio.FileIcon = { new: file => file.path };
+    assert.equal(launcher._makeSearchIcon('edit-find-symbolic'), 'edit-find-symbolic');
+    assert.equal(launcher._makeSearchIcon('amazon.svg'), 'extension/amazon.svg');
+    assert.equal(launcher._makeSearchIcon(`${String.fromCharCode(47)}icons/custom.png`), `${String.fromCharCode(47)}icons/custom.png`);
+});
+
+
+test('YouTube keyword ranks first while its display name remains searchable', () => {
+    const { launcher } = fixture();
+    launcher._youtubeSearchItem.searchKey = launcher._searchConfig.youtube.keywords.join(' ').toLowerCase();
+    launcher._apps = [{ displayName: 'My yt helper', searchKey: 'my yt helper', desktopId: '' }];
+    for (const query of ['yt', 'you', 'youtube']) {
+        launcher._updateResults(query);
+        assert.equal(launcher._filteredApps[0], launcher._youtubeSearchItem, query);
+    }
+    let query = 'yt';
+    launcher._entry = { get_text: () => query, set_text: value => { query = value; }, grab_key_focus: () => {} };
+    launcher._updateResults(query);
+    launcher._launchSelected();
+    assert.equal(launcher._youtubeSearchMode, true);
+    assert.equal(query, '');
 });

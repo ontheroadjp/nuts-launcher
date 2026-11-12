@@ -84,7 +84,7 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 
 ### 検索・結果表示
 
-検索は display name と desktop id の case-insensitive 部分一致。表示件数は `Config.maxResults` に制限する。既定値は 10、許容範囲は 8〜100。設定は extension 有効化時に読み込む。根拠コード: `nuts-launcher@local/extension.js:90-91`, `nuts-launcher@local/extension.js:551-606`。
+検索は display name と desktop id の case-insensitive 部分一致。表示件数は `Config.maxResults` に制限する。既定値は 10、許容範囲は 8〜100。設定は extension 有効化時に読み込む。根拠コード: `nuts-launcher@local/extension.js:90-92`, `nuts-launcher@local/extension.js:564-625`。
 
 強制終了、eject、システムアクションの順に連結し（以下 `systemItems`）、まとめて扱う。
 
@@ -218,3 +218,5 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - 46ec9c0 feat(#26): add force quit actions for running apps (#27)
 - d134e11 feat(#20): close launcher on outside click (#21)
 - c62eadf feat(#18): add suspend action to launcher (#19)
+
+設定された検索項目の有効状態、名前、アイコン、キーワード、URL を適用する。アイコンはテーマ名または画像ファイルを指定できる。根拠コード: `nuts-launcher@local/extension.js:90-122`, `nuts-launcher@local/extension.js:149-155`, `nuts-launcher@local/extension.js:540-587`, `nuts-launcher@local/extension.js:773-818`。
