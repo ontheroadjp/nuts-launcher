@@ -36,7 +36,7 @@ Switching the input method to US requires the separate FepSwitcher extension. Th
 2. Type an application name, action, search query, or URL. The result list is empty until you type.
 3. Select an item with `Up` / `Down` or `Ctrl+K` / `Ctrl+J`, then press `Enter` to run it. Press `Ctrl+Enter` to request a new application window, or `Esc` to close the launcher.
 
-Select Web Search, Amazon Search, or YouTube Search after typing a query to search for it. Selecting an item with a query matching its name opens its dedicated search mode. Search items matching the input appear above other results, with prefix matches first. Select Open URL to enter its dedicated input mode.
+Select Web Search, Amazon Search, or YouTube Search after typing a query to search for it. Select Open URL to open the input as an address; HTTPS is assumed when the scheme is omitted. Selecting an item with a query matching its name opens its dedicated input mode. Matching results are ranked by exact match, prefix match, then substring match.
 
 Enter an expression such as `1234*2` to calculate it. Select a result or equation to copy it; comma-separated variants appear when applicable.
 

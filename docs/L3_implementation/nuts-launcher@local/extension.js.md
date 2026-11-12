@@ -180,7 +180,7 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ### 通常の検索では Web Search を表示する
 
-通常モードでは空クエリ時に結果を表示しない。入力時はアプリと `systemItems` を絞り込み、Web Search、Amazon Search、YouTube Search を表示する。URL 入力モードでは Open URL を表示する。
+通常モードでは空クエリ時に結果を表示しない。入力時はアプリと `systemItems` を絞り込み、Web Search、Amazon Search、YouTube Search、Open URL を表示する。URL 入力モードでは Open URL を表示する。
 
 根拠コード: `nuts-launcher@local/extension.js:471-500`
 
@@ -207,6 +207,7 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
+- 4b80551 fix(#50): rank results and improve open URL action
 - d9eaade feat(#41): add YouTube search
 - ffbd738 feat(#39): add Amazon search (#40)
 - 6d07b24 fix(#37): request browser activation for web links (#38)
