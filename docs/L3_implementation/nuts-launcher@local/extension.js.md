@@ -204,6 +204,8 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - fuzzy search、最近使ったアプリ、使用頻度学習は未実装
 - システムアクションの実行時の確認や可用性は GNOME Shell の `SystemActions` に従う
 - USB ハブ経由の HDD の再マウント・停止挙動は環境依存であり、実機確認が必要（関連 issue #12）。
+設定された検索項目の有効状態、名前、アイコン、キーワード、URL を適用する。アイコンはテーマ名または画像ファイルを指定できる。根拠コード: `nuts-launcher@local/extension.js:90-122`, `nuts-launcher@local/extension.js:149-155`, `nuts-launcher@local/extension.js:540-587`, `nuts-launcher@local/extension.js:773-818`。
+
 ## 変更履歴（git log より自動生成）
 
 - 0815037 feat(#47): configure built-in search actions
