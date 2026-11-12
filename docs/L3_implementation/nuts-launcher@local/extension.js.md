@@ -88,13 +88,15 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 
 強制終了、eject、システムアクションの順に連結し（以下 `systemItems`）、まとめて扱う。
 
-通常検索でクエリが空の場合は結果を表示しない。クエリがある場合はアプリと `systemItems` の一致に加え、Web Search と Amazon Search を表示する。検索項目の名前に一致する場合は項目を上位に置き、先頭一致を部分一致より優先する。専用検索モードでは選択した検索項目のみ表示する。
+通常検索でクエリが空の場合は結果を表示しない。クエリがある場合はアプリと `systemItems` の一致に加え、Web Search、Amazon Search、YouTube Search を表示する。検索項目の名前に一致する場合は項目を上位に置き、先頭一致を部分一致より優先する。専用検索モードでは選択した検索項目のみ表示する。
 
 通常検索では、有効な四則演算式の結果を先頭に表示し、選択するとクリップボードにコピーする。整数部分が 4 桁以上の結果は、その下にカンマ区切りの候補も表示する。続いて入力式と結果を連結した候補を表示し、式または結果に 4 桁以上の整数部分があればカンマ区切り版も表示する。式付き候補では `*` と `/` を `×` と `÷` で表示する。各候補は選択した形式でコピーする。小数、符号、括弧と演算子の優先順位に対応する。式は専用パーサーで処理し、任意の JavaScript は実行しない。不完全な式、ゼロ除算、非有限の結果は通常の検索として扱う。入力長は 512 文字、入れ子は 100 段階までに制限する。
 
 根拠コード: `nuts-launcher@local/extension.js:26-89`, `nuts-launcher@local/extension.js:535-585`
 
 Amazon Search は Font Awesome の Amazon SVG を白色で表示する。アイコンの出典とライセンスは同梱の `amazon-icon-license.txt` に記載する。
+
+YouTube Search も Font Awesome の SVG を白色で表示し、出典とライセンスは `youtube-icon-license.txt` に記載する。
 
 根拠コード: `nuts-launcher@local/extension.js:105-113`, `nuts-launcher@local/extension.js:542-599`
 
@@ -119,6 +121,10 @@ HTTP / HTTPS URL は検証後に先頭の Open URL 項目として表示する�
 Open URL の入口を選ぶと入力欄を消去して URL 入力モードに切り替える。有効な URL 項目を選ぶと launcher を閉じて既定のブラウザで開き、失敗時はログと通知で報告する。Web Search と Open URL は GNOME Shell の起動コンテキストを渡してブラウザのアクティブ化を要求する。表示・非表示時にモードをリセットする。
 
 Amazon Search は項目名に一致する検索語で選ぶと入力欄を消去し Amazon 検索モードに切り替える。それ以外の検索語では URL エンコードして Amazon.co.jp の検索結果を既定のブラウザで開く。専用モードでも入力後の Enter で検索する。
+
+YouTube Search も同様に専用モードへ切り替え、または URL エンコードした検索語で YouTube の検索結果を既定のブラウザで開く。
+
+根拠コード: `nuts-launcher@local/extension.js:770-786`
 
 根拠コード: `nuts-launcher@local/extension.js:727-756`
 
@@ -174,7 +180,7 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ### 通常の検索では Web Search を表示する
 
-通常モードでは空クエリ時に結果を表示しない。入力時はアプリと `systemItems` を絞り込み、Web Search と Amazon Search を表示する。URL 入力モードでは Open URL を表示する。
+通常モードでは空クエリ時に結果を表示しない。入力時はアプリと `systemItems` を絞り込み、Web Search、Amazon Search、YouTube Search を表示する。URL 入力モードでは Open URL を表示する。
 
 根拠コード: `nuts-launcher@local/extension.js:471-500`
 

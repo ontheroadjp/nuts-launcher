@@ -38,6 +38,7 @@ function fixture() {
     launcher._systemItems = [];
     launcher._webSearchItem = { displayName: 'Web Search...' };
     launcher._amazonSearchItem = { displayName: 'Amazon Search...' };
+    launcher._youtubeSearchItem = { displayName: 'YouTube Search...' };
     launcher._openUrlItem = { displayName: 'Open URL...' };
     launcher._webSearchMode = false;
     launcher._urlMode = false;
@@ -83,7 +84,7 @@ test('search matches names and desktop IDs without case sensitivity and limits r
     launcher._updateResults('REBOOT');
     assert.equal(launcher._filteredApps[0].displayName, 'Restart');
     launcher._updateResults('absent');
-    assert.equal(launcher._filteredApps.length, 2);
+    assert.equal(launcher._filteredApps.length, 3);
     assert.equal(launcher._filteredApps[0].displayName, 'Web Search...');
 });
 
@@ -107,6 +108,10 @@ test('matching search items appear first', () => {
     }
     launcher._updateResults('web');
     assert.equal(launcher._filteredApps[0], launcher._webSearchItem);
+    for (const query of ['y', 'yo', 'youtube']) {
+        launcher._updateResults(query);
+        assert.equal(launcher._filteredApps[0], launcher._youtubeSearchItem, query);
+    }
 });
 
 test('calculator respects precedence, parentheses, signs and decimals', () => {
@@ -186,14 +191,14 @@ test('calculator copies the result and preserves search modes and result limit',
     }));
     launcher._updateResults('1+2');
     assert.equal(launcher._filteredApps.length, 10);
-    assert.equal(launcher._filteredApps.at(-2), launcher._webSearchItem);
+    assert.equal(launcher._filteredApps.at(-3), launcher._webSearchItem);
     launcher._launchSelected();
     assert.deepEqual(calls, ['hide', ['clipboard', '3']]);
     launcher._apps = launcher._apps.map(app => ({ ...app, searchKey: '1000+0' }));
     launcher._updateResults('1000+0');
     assert.equal(launcher._filteredApps.length, 10);
     assert.equal(launcher._filteredApps[1].displayName, '= 1,000');
-    assert.equal(launcher._filteredApps.at(-2), launcher._webSearchItem);
+    assert.equal(launcher._filteredApps.at(-3), launcher._webSearchItem);
     launcher._webSearchMode = true;
     launcher._updateResults('1+2');
     assert.equal(launcher._filteredApps[0], launcher._webSearchItem);
@@ -212,7 +217,7 @@ test('valid web URLs are first and open directly while web search remains availa
     Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
     launcher._updateResults(query);
     assert.equal(launcher._filteredApps[0].displayName, `Open URL: ${query}`);
-    assert.equal(launcher._filteredApps.at(-2), launcher._webSearchItem);
+    assert.equal(launcher._filteredApps.at(-3), launcher._webSearchItem);
     launcher._launchSelected();
     assert.deepEqual(calls, ['hide', query]);
     query = 'http://example.com';
@@ -347,6 +352,36 @@ test('Amazon search enters its mode and opens encoded queries', () => {
     assert.equal(launcher._filteredApps[launcher._selectedIndex], launcher._amazonSearchItem);
     launcher._launchSelected();
     assert.deepEqual(calls, ['focus', 'hide', 'https://www.amazon.co.jp/s?k=%E6%97%A5%E6%9C%AC%E8%AA%9E%20%26%20cats']);
+});
+
+test('YouTube search enters its mode and opens encoded queries', () => {
+    const { launcher, Gio } = fixture();
+    const calls = [];
+    let query = 'you';
+    launcher._entry = { get_text: () => query, set_text: value => { query = value; launcher._onSearchChanged(); },
+        grab_key_focus: () => calls.push('focus') };
+    launcher._hide = () => calls.push('hide');
+    Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
+    launcher._updateResults(query);
+    launcher._launchSelected();
+    assert.equal(launcher._youtubeSearchMode, true);
+    query = '日本語 & cats';
+    launcher._onSearchChanged();
+    assert.equal(launcher._filteredApps[launcher._selectedIndex], launcher._youtubeSearchItem);
+    launcher._launchSelected();
+    assert.deepEqual(calls, ['focus', 'hide', 'https://www.youtube.com/results?search_query=%E6%97%A5%E6%9C%AC%E8%AA%9E%20%26%20cats']);
+});
+
+test('YouTube search opens an existing query directly', () => {
+    const { launcher, Gio } = fixture();
+    const calls = [];
+    launcher._entry = { get_text: () => '音楽 & jazz' };
+    launcher._hide = () => calls.push('hide');
+    Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
+    launcher._updateResults('音楽 & jazz');
+    launcher._selectedIndex = launcher._filteredApps.indexOf(launcher._youtubeSearchItem);
+    launcher._launchSelected();
+    assert.deepEqual(calls, ['hide', 'https://www.youtube.com/results?search_query=%E9%9F%B3%E6%A5%BD%20%26%20jazz']);
 });
 
 test('keyboard navigation clamps selection and dispatches launch and escape', () => {
