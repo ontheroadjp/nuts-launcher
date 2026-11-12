@@ -207,7 +207,8 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
-- 3b45ba4 feat(#39): add Amazon search
+- d9eaade feat(#41): add YouTube search
+- ffbd738 feat(#39): add Amazon search (#40)
 - 6d07b24 fix(#37): request browser activation for web links (#38)
 - 1af9bdc feat(#35): add calculator search results (#36)
 - f727afd refactor: simplify launcher actions and cleanup
@@ -216,4 +217,3 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - 46ec9c0 feat(#26): add force quit actions for running apps (#27)
 - d134e11 feat(#20): close launcher on outside click (#21)
 - c62eadf feat(#18): add suspend action to launcher (#19)
-- 33acfdf feat(#16): open new windows with ctrl enter (#17)
