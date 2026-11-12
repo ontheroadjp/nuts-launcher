@@ -97,6 +97,7 @@ export default class NutsLauncherExtension extends Extension {
         this._positionIdleId = null;
         this._selectedIndex = 0;
         this._webSearchMode = false;
+        this._amazonSearchMode = false;
         this._urlMode = false;
         this._openUrlItem = {
             displayName: 'Open URL...',
@@ -105,6 +106,10 @@ export default class NutsLauncherExtension extends Extension {
         this._webSearchItem = {
             displayName: 'Web Search...',
             icon: Gio.ThemedIcon.new('web-browser-symbolic'),
+        };
+        this._amazonSearchItem = {
+            displayName: 'Amazon Search...',
+            icon: Gio.FileIcon.new(Gio.File.new_for_path(`${this.path}/amazon.svg`)),
         };
         this._apps = [];
         this._filteredApps = [];
@@ -281,6 +286,7 @@ export default class NutsLauncherExtension extends Extension {
 
     _show() {
         this._webSearchMode = false;
+        this._amazonSearchMode = false;
         this._urlMode = false;
         this._entry.hint_text = 'Search applications...';
         this._buildEjectItems();
@@ -303,6 +309,7 @@ export default class NutsLauncherExtension extends Extension {
 
     _hide() {
         this._webSearchMode = false;
+        this._amazonSearchMode = false;
         this._urlMode = false;
         this._cancelQueuedShow();
         this._mainBox.hide();
@@ -538,8 +545,12 @@ export default class NutsLauncherExtension extends Extension {
         let results;
         if (this._urlMode) {
             results = [this._openUrlItem];
-        } else if (lq === '' || this._webSearchMode) {
+        } else if (this._amazonSearchMode) {
+            results = [this._amazonSearchItem];
+        } else if (this._webSearchMode) {
             results = [this._webSearchItem];
+        } else if (lq === '') {
+            results = [];
         } else {
             const filteredApps = this._apps.filter(a =>
                 a.searchKey.includes(lq) || a.desktopId.includes(lq)
@@ -547,21 +558,26 @@ export default class NutsLauncherExtension extends Extension {
             const filteredSys = systemItems.filter(s =>
                 s.searchKey.includes(lq)
             );
-            results = [...filteredApps, ...filteredSys].slice(0, MAX_RESULTS - 1);
-            results.push(this._webSearchItem);
+            const searchItems = [this._webSearchItem, this._amazonSearchItem];
+            const matchingSearchItems = searchItems.filter(item => item.displayName.toLowerCase().includes(lq))
+                .sort((a, b) => Number(b.displayName.toLowerCase().startsWith(lq)) - Number(a.displayName.toLowerCase().startsWith(lq)));
+            const otherSearchItems = searchItems.filter(item => !matchingSearchItems.includes(item));
+            results = [...matchingSearchItems, ...filteredApps, ...filteredSys]
+                .slice(0, MAX_RESULTS - otherSearchItems.length);
+            results.push(...otherSearchItems);
             if ('open url http https'.includes(lq)) {
                 if (results.length === MAX_RESULTS)
-                    results.splice(MAX_RESULTS - 2, 1);
-                results.splice(results.length - 1, 0, this._openUrlItem);
+                    results.splice(results.findLastIndex(item => item !== this._webSearchItem && item !== this._amazonSearchItem), 1);
+                results.push(this._openUrlItem);
             }
         }
 
         if (urlItem) {
             if (results.length === MAX_RESULTS)
-                results.splice(MAX_RESULTS - 2, 1);
+                results.splice(results.findLastIndex(item => item !== this._webSearchItem && item !== this._amazonSearchItem), 1);
             results.unshift(urlItem);
         }
-        if (!this._urlMode && !this._webSearchMode) {
+        if (!this._urlMode && !this._webSearchMode && !this._amazonSearchMode) {
             const result = calculate(query);
             if (result !== null) {
                 const grouped = /e/i.test(result) ? result : groupDigits(result);
@@ -574,7 +590,7 @@ export default class NutsLauncherExtension extends Extension {
                     values.push(groupedEquation);
                 for (const value of values.reverse()) {
                     if (results.length === MAX_RESULTS)
-                        results.splice(MAX_RESULTS - 2, 1);
+                        results.splice(results.findLastIndex(item => item !== this._webSearchItem && item !== this._amazonSearchItem), 1);
                     results.unshift({ displayName: value.includes('=') ? value : `= ${value}`, icon: Gio.ThemedIcon.new('accessories-calculator-symbolic'),
                         activate: () => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, value) });
                 }
@@ -687,6 +703,11 @@ export default class NutsLauncherExtension extends Extension {
             return;
         }
 
+        if (item === this._amazonSearchItem) {
+            this._launchAmazonSearch(item);
+            return;
+        }
+
         this._hide();
         if (item.activate)
             item.activate();
@@ -697,6 +718,7 @@ export default class NutsLauncherExtension extends Extension {
     _enterInputMode(urlMode) {
         this._urlMode = urlMode;
         this._webSearchMode = !urlMode;
+        this._amazonSearchMode = false;
         this._entry.hint_text = urlMode ? 'URL 入力' : 'WEB 検索';
         this._entry.set_text('');
         this._entry.grab_key_focus();
@@ -711,6 +733,22 @@ export default class NutsLauncherExtension extends Extension {
         }
         if (query)
             this._openUri(`https://www.google.com/search?q=${encodeURIComponent(query)}`, 'Web Search');
+    }
+
+    _launchAmazonSearch(item) {
+        const query = this._entry.get_text().trim();
+        if (!this._amazonSearchMode &&
+            (!query || item.displayName.toLowerCase().includes(query.toLowerCase()))) {
+            this._urlMode = false;
+            this._webSearchMode = false;
+            this._amazonSearchMode = true;
+            this._entry.hint_text = 'Amazon 検索';
+            this._entry.set_text('');
+            this._entry.grab_key_focus();
+            return;
+        }
+        if (query)
+            this._openUri(`https://www.amazon.co.jp/s?k=${encodeURIComponent(query)}`, 'Amazon Search');
     }
 
     _openUri(uri, label) {
