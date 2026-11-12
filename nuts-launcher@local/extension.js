@@ -530,8 +530,8 @@ export default class NutsLauncherExtension extends Extension {
         this._highlightSelected();
     }
 
-    _makeUrlItem(query) {
-        const candidate = this._urlMode && query && !/^[a-z][a-z\d+.-]*:\/\//i.test(query)
+    _makeUrlItem(query, assumeHttps = this._urlMode) {
+        const candidate = assumeHttps && query && !/^[a-z][a-z\d+.-]*:\/\//i.test(query)
             ? `https://${query}` : query;
         if (/^https?:\/\//i.test(candidate) && !/\s/.test(candidate)) {
             try {
@@ -561,29 +561,31 @@ export default class NutsLauncherExtension extends Extension {
         } else if (lq === '') {
             results = [];
         } else {
-            const filteredApps = this._apps.filter(a =>
-                a.searchKey.includes(lq) || a.desktopId.includes(lq)
-            );
-            const filteredSys = systemItems.filter(s =>
-                s.searchKey.includes(lq)
-            );
             const searchItems = [this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem];
-            const matchingSearchItems = searchItems.filter(item => item.displayName.toLowerCase().includes(lq))
-                .sort((a, b) => Number(b.displayName.toLowerCase().startsWith(lq)) - Number(a.displayName.toLowerCase().startsWith(lq)));
-            const otherSearchItems = searchItems.filter(item => !matchingSearchItems.includes(item));
-            results = [...matchingSearchItems, ...filteredApps, ...filteredSys]
-                .slice(0, MAX_RESULTS - otherSearchItems.length);
-            results.push(...otherSearchItems);
-            if ('open url http https'.includes(lq)) {
-                if (results.length === MAX_RESULTS)
-                    results.splice(results.findLastIndex(item => !searchItems.includes(item)), 1);
-                results.push(this._openUrlItem);
-            }
+            const fallbackItems = [...searchItems, this._openUrlItem];
+            const candidates = [...searchItems, ...this._apps, ...systemItems, this._openUrlItem];
+            const matchRank = item => {
+                const keys = [(item.displayName ?? '').toLowerCase().replace(/\.\.\.$/, ''),
+                    item.searchKey ?? '', item.desktopId ?? ''];
+                if (item === this._openUrlItem)
+                    keys.push('http', 'https');
+                if (keys.some(key => key === lq)) return 0;
+                if (keys.some(key => key.startsWith(lq))) return 1;
+                if (keys.some(key => key.includes(lq))) return 2;
+                return 3;
+            };
+            const matches = candidates.filter(item => matchRank(item) < 3)
+                .sort((a, b) => matchRank(a) - matchRank(b));
+            const otherFallbackItems = fallbackItems.filter(item => !matches.includes(item));
+            let ordinaryCount = 0;
+            results = matches.filter(item => fallbackItems.includes(item) ||
+                ordinaryCount++ < MAX_RESULTS - fallbackItems.length);
+            results.push(...otherFallbackItems);
         }
 
         if (urlItem) {
             if (results.length === MAX_RESULTS)
-                results.splice(results.findLastIndex(item => ![this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem].includes(item)), 1);
+                results.splice(results.findLastIndex(item => ![this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem, this._openUrlItem].includes(item)), 1);
             results.unshift(urlItem);
         }
         if (!this._urlMode && !this._webSearchMode && !this._amazonSearchMode && !this._youtubeSearchMode) {
@@ -599,7 +601,7 @@ export default class NutsLauncherExtension extends Extension {
                     values.push(groupedEquation);
                 for (const value of values.reverse()) {
                     if (results.length === MAX_RESULTS)
-                        results.splice(results.findLastIndex(item => ![this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem].includes(item)), 1);
+                        results.splice(results.findLastIndex(item => ![this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem, this._openUrlItem].includes(item)), 1);
                     results.unshift({ displayName: value.includes('=') ? value : `= ${value}`, icon: Gio.ThemedIcon.new('accessories-calculator-symbolic'),
                         activate: () => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, value) });
                 }
@@ -702,8 +704,16 @@ export default class NutsLauncherExtension extends Extension {
         }
 
         if (item === this._openUrlItem) {
-            if (!this._urlMode)
+            const query = this._entry.get_text().trim();
+            const lowerQuery = query.toLowerCase();
+            if (!this._urlMode && (!query || item.displayName.toLowerCase().includes(lowerQuery) ||
+                'http'.includes(lowerQuery) || 'https'.includes(lowerQuery))) {
                 this._enterInputMode(true);
+            } else {
+                const urlItem = this._makeUrlItem(query, true);
+                if (urlItem)
+                    this._openUri(urlItem.url, 'Open URL');
+            }
             return;
         }
 

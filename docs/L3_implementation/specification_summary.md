@@ -79,8 +79,8 @@ export default class NutsLauncherExtension extends Extension {
 - ランチャーの外側をクリックすると閉じる
 - テーマ・設定 UI は不要
 - システムアクションと接続中デバイスの eject は検索文字列に一致した場合に表示する
-- 通常の検索モードでは入力後に Web Search、Amazon Search、YouTube Search を表示する。URL 入力モードでは Open URL を表示する
-- HTTP / HTTPS URL は Open URL として先頭に表示する。Open URL 入力モードへの入口は `open url`、`http`、`https` に一致する検索で表示する
+- 通常の検索モードでは入力後に Web Search、Amazon Search、YouTube Search、Open URL を表示する。URL 入力モードでは Open URL を表示する
+- HTTP / HTTPS URL は Open URL として先頭に表示する
 
 ## アプリ一覧取得とシステムアクション
 
@@ -113,12 +113,12 @@ eject アイテムは `_buildEjectItems()` で `Show()` ごとに再構築する
 - case-insensitive 部分一致
 - 検索対象: display name、desktop id、および各アクションの検索語
 - 通常検索で入力が空の場合: 結果を表示しない
-- 入力がある場合: 部分一致するアプリ、強制終了、eject、システムアクションと、Web Search、Amazon Search、YouTube Search を表示する。検索項目名に一致する項目は上位に表示し、先頭一致を部分一致より優先する。強制終了は `force quit` / アプリ名で検索可。表示は最大 10 件
+- 入力がある場合: 部分一致するアプリ、強制終了、eject、システムアクションと、Web Search、Amazon Search、YouTube Search、Open URL を表示する。一致候補は完全一致、先頭一致、部分一致の順に表示し、同順位は元の順序を保つ。強制終了は `force quit` / アプリ名で検索可。表示は最大 10 件
 - 通常検索では四則演算と括弧を含む有効な式の結果と式付き結果を先頭に表示し、選択した形式をクリップボードにコピーする。整数部分が 4 桁以上の場合はカンマ区切りの候補も表示し、式付き候補では `*` と `/` を `×` と `÷` で表示する。不正な式やゼロ除算は計算候補を表示しない
 - 空欄または Web Search の項目名に一致する文字列で Web Search を選ぶと入力を消去し、Web 検索モードに切り替える。それ以外の文字列から選ぶと、その文字列で Google 検索を開く。Web 検索モードでは入力後の Enter で検索する
 - Amazon Search も同様に専用モードまたは Amazon.co.jp の検索結果を開く。アイコンは白色の Font Awesome ブランドアイコンを使用する
 - YouTube Search も同様に専用モードまたは YouTube の検索結果を開く。アイコンは白色の Font Awesome ブランドアイコンを使用する
-- Open URL を選ぶと URL 入力モードへ切り替え、スキームを省略した入力には `https://` を補う。有効な URL を選択すると既定のブラウザで開く。空欄、無効な URL、HTTP / HTTPS 以外のスキームは開かない
+- Open URL を項目名や `http`、`https` に一致する入力で選ぶと URL 入力モードへ切り替える。それ以外の入力では URL を直接開き、スキームを省略した入力には `https://` を補う。空欄、無効な URL、HTTP / HTTPS 以外のスキームは開かない
 - Enter は入力メソッドによる変換確定を優先する
 
 fuzzy search・使用頻度学習は実装されていない。

@@ -84,8 +84,20 @@ test('search matches names and desktop IDs without case sensitivity and limits r
     launcher._updateResults('REBOOT');
     assert.equal(launcher._filteredApps[0].displayName, 'Restart');
     launcher._updateResults('absent');
-    assert.equal(launcher._filteredApps.length, 3);
+    assert.equal(launcher._filteredApps.length, 4);
     assert.equal(launcher._filteredApps[0].displayName, 'Web Search...');
+});
+
+test('Open URL remains available for ordinary queries even when results are full', () => {
+    const { launcher } = fixture();
+    launcher._apps = Array.from({ length: 12 }, (_, i) => ({
+        displayName: `localhost ${i}`, searchKey: `localhost ${i}`, desktopId: '',
+    }));
+    launcher._updateResults('localhost');
+    assert.equal(launcher._filteredApps.length, 10);
+    assert.ok(launcher._filteredApps.includes(launcher._openUrlItem));
+    launcher._updateResults('1+2');
+    assert.ok(launcher._filteredApps.includes(launcher._openUrlItem));
 });
 
 test('empty search displays no results', () => {
@@ -112,6 +124,25 @@ test('matching search items appear first', () => {
         launcher._updateResults(query);
         assert.equal(launcher._filteredApps[0], launcher._youtubeSearchItem, query);
     }
+});
+
+test('all matching candidates are ranked by exact, prefix and substring matches', () => {
+    const { launcher } = fixture();
+    launcher._apps = [
+        { displayName: 'Blur', searchKey: 'blur', desktopId: '' },
+        { displayName: 'URL helper', searchKey: 'url helper', desktopId: '' },
+        { displayName: 'URL', searchKey: 'url', desktopId: '' },
+    ];
+    launcher._updateResults('url');
+    assert.deepEqual(Array.from(launcher._filteredApps.slice(0, 3), item => item.displayName),
+        ['URL', 'URL helper', 'Open URL...']);
+    launcher._updateResults('ur');
+    assert.deepEqual(Array.from(launcher._filteredApps.slice(0, 4), item => item.displayName),
+        ['URL helper', 'URL', 'Blur', 'Open URL...']);
+    launcher._updateResults('ope');
+    assert.equal(launcher._filteredApps[0], launcher._openUrlItem);
+    launcher._updateResults('URL');
+    assert.equal(launcher._filteredApps[0].displayName, 'URL');
 });
 
 test('calculator respects precedence, parentheses, signs and decimals', () => {
@@ -191,14 +222,14 @@ test('calculator copies the result and preserves search modes and result limit',
     }));
     launcher._updateResults('1+2');
     assert.equal(launcher._filteredApps.length, 10);
-    assert.equal(launcher._filteredApps.at(-3), launcher._webSearchItem);
+    assert.ok(launcher._filteredApps.includes(launcher._webSearchItem));
     launcher._launchSelected();
     assert.deepEqual(calls, ['hide', ['clipboard', '3']]);
     launcher._apps = launcher._apps.map(app => ({ ...app, searchKey: '1000+0' }));
     launcher._updateResults('1000+0');
     assert.equal(launcher._filteredApps.length, 10);
     assert.equal(launcher._filteredApps[1].displayName, '= 1,000');
-    assert.equal(launcher._filteredApps.at(-3), launcher._webSearchItem);
+    assert.ok(launcher._filteredApps.includes(launcher._webSearchItem));
     launcher._webSearchMode = true;
     launcher._updateResults('1+2');
     assert.equal(launcher._filteredApps[0], launcher._webSearchItem);
@@ -217,7 +248,7 @@ test('valid web URLs are first and open directly while web search remains availa
     Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
     launcher._updateResults(query);
     assert.equal(launcher._filteredApps[0].displayName, `Open URL: ${query}`);
-    assert.equal(launcher._filteredApps.at(-3), launcher._webSearchItem);
+    assert.ok(launcher._filteredApps.includes(launcher._webSearchItem));
     launcher._launchSelected();
     assert.deepEqual(calls, ['hide', query]);
     query = 'http://example.com';
@@ -284,6 +315,32 @@ test('h finds Open URL and URL mode opens addresses with or without a scheme', (
     launcher._onSearchChanged();
     launcher._launchSelected();
     assert.equal(calls.at(-1), query);
+});
+
+test('Open URL opens an existing address or enters its mode for name matches', () => {
+    const { launcher, Gio } = fixture();
+    const calls = [];
+    let query = 'localhost';
+    launcher._entry = { get_text: () => query, set_text: value => { query = value; },
+        grab_key_focus: () => calls.push('focus') };
+    launcher._hide = () => calls.push('hide');
+    Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
+    launcher._updateResults(query);
+    launcher._selectedIndex = launcher._filteredApps.indexOf(launcher._openUrlItem);
+    launcher._launchSelected();
+    assert.deepEqual(calls, ['hide', 'https://localhost']);
+    query = 'bad address';
+    launcher._updateResults(query);
+    launcher._selectedIndex = launcher._filteredApps.indexOf(launcher._openUrlItem);
+    launcher._launchSelected();
+    assert.deepEqual(calls, ['hide', 'https://localhost']);
+    query = 'ope';
+    launcher._updateResults(query);
+    launcher._selectedIndex = launcher._filteredApps.indexOf(launcher._openUrlItem);
+    launcher._launchSelected();
+    assert.equal(query, '');
+    assert.equal(launcher._urlMode, true);
+    assert.equal(calls.at(-1), 'focus');
 });
 
 test('URL mode does not launch invalid input or unsupported schemes', () => {
