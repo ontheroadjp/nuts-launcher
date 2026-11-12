@@ -36,7 +36,7 @@ Switching the input method to US requires the separate FepSwitcher extension. Th
 2. Type an application name, action, search query, or URL. The result list is empty until you type.
 3. Select an item with `Up` / `Down` or `Ctrl+K` / `Ctrl+J`, then press `Enter` to run it. Press `Ctrl+Enter` to request a new application window, or `Esc` to close the launcher.
 
-Select Web Search, Amazon Search, or YouTube Search after typing a query to search for it. Select Open URL to open the input as an address; HTTPS is assumed when the scheme is omitted. Selecting an item with a query matching its name opens its dedicated input mode. Matching results are ranked by exact match, prefix match, then substring match.
+Select Web Search, Amazon Search, or YouTube Search after typing a query to search for it. Select Open URL to open the input as an address; HTTPS is assumed when the scheme is omitted. Selecting an item with a query matching its name or configured keyword opens its dedicated input mode. Matching results are ranked by exact match, prefix match, then substring match.
 
 Enter an expression such as `1234*2` to calculate it. Select a result or equation to copy it; comma-separated variants appear when applicable.
 
@@ -52,6 +52,12 @@ To install only the extension manually, create the destination's parent director
 ln -s "$PWD/nuts-launcher@local" ~/.local/share/gnome-shell/extensions/nuts-launcher@local
 gnome-extensions enable nuts-launcher@local
 ```
+
+### Configuration
+
+On first enable, the extension creates `nuts-launcher/config.json` under `XDG_CONFIG_HOME` (or `~/.config` when unset). Edit `general.maxResults` to set the result limit (8–100, default 10). Under `customSearch`, the existing Open URL and search actions have an `enabled` flag and `icon`; the three search actions also support `displayName`, `url` with a `{query}` placeholder, and a `keywords` array. The default YouTube keyword is `yt`. Icon values are GNOME icon names or image paths; relative paths are resolved against the extension directory. Arbitrary new search actions are not supported yet.
+
+Disable and enable the extension to reload configuration changes. Invalid values use defaults; existing values are preserved when missing defaults are added.
 
 ### DBus control
 

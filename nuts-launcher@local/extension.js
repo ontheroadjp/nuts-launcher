@@ -7,6 +7,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as SystemActions from 'resource:///org/gnome/shell/misc/systemActions.js';
 import * as ShellMountOperation from 'resource:///org/gnome/shell/ui/shellMountOperation.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Config } from './config.js';
 
 const DBUS_IFACE = `
 <node>
@@ -19,7 +20,6 @@ const DBUS_IFACE = `
 
 const BUS_NAME = 'org.gnome.Shell.Extensions.NutsLauncher';
 const OBJECT_PATH = '/org/gnome/Shell/Extensions/NutsLauncher';
-const MAX_RESULTS = 10;
 const SHOW_GRAB_DELAY_MS = 120;
 
 // Parse only arithmetic, without evaluating the input as JavaScript.
@@ -88,6 +88,8 @@ function groupDigits(value) {
 
 export default class NutsLauncherExtension extends Extension {
     enable() {
+        this._config = new Config();
+        this._searchConfig = this._config.searches;
         this._visible = false;
         this._modalGrab = null;
         this._entryTextChangedId = null;
@@ -102,19 +104,22 @@ export default class NutsLauncherExtension extends Extension {
         this._urlMode = false;
         this._openUrlItem = {
             displayName: 'Open URL...',
-            icon: Gio.ThemedIcon.new('web-browser-symbolic'),
+            icon: this._makeSearchIcon(this._searchConfig.openUrl.icon),
         };
         this._webSearchItem = {
-            displayName: 'Web Search...',
-            icon: Gio.ThemedIcon.new('web-browser-symbolic'),
+            displayName: this._searchConfig.web.displayName,
+            searchKey: this._searchConfig.web.keywords.join(' ').toLowerCase(),
+            icon: this._makeSearchIcon(this._searchConfig.web.icon),
         };
         this._amazonSearchItem = {
-            displayName: 'Amazon Search...',
-            icon: Gio.FileIcon.new(Gio.File.new_for_path(`${this.path}/amazon.svg`)),
+            displayName: this._searchConfig.amazon.displayName,
+            searchKey: this._searchConfig.amazon.keywords.join(' ').toLowerCase(),
+            icon: this._makeSearchIcon(this._searchConfig.amazon.icon),
         };
         this._youtubeSearchItem = {
-            displayName: 'YouTube Search...',
-            icon: Gio.FileIcon.new(Gio.File.new_for_path(`${this.path}/youtube.svg`)),
+            displayName: this._searchConfig.youtube.displayName,
+            searchKey: this._searchConfig.youtube.keywords.join(' ').toLowerCase(),
+            icon: this._makeSearchIcon(this._searchConfig.youtube.icon),
         };
         this._apps = [];
         this._filteredApps = [];
@@ -132,11 +137,21 @@ export default class NutsLauncherExtension extends Extension {
         this._unexportDBus();
         this._destroyUI();
 
+        this._config = null;
+        this._searchConfig = null;
         this._apps = null;
         this._filteredApps = null;
         this._rows = null;
         this._ejectItems = null;
         this._forceQuitItems = null;
+    }
+
+    _makeSearchIcon(icon) {
+        if (icon.includes('/') || /\.(svg|png|jpg|jpeg)$/i.test(icon)) {
+            const path = GLib.path_is_absolute(icon) ? icon : GLib.build_filenamev([this.path, icon]);
+            return Gio.FileIcon.new(Gio.File.new_for_path(path));
+        }
+        return Gio.ThemedIcon.new(icon);
     }
 
     // --- DBus lifecycle ---
@@ -522,7 +537,7 @@ export default class NutsLauncherExtension extends Extension {
     }
 
     _updateResults(query) {
-        const urlItem = this._makeUrlItem(query);
+        const urlItem = this._searchConfig.openUrl.enabled ? this._makeUrlItem(query) : null;
         this._filteredApps = this._buildSearchResults(query, urlItem);
         this._renderResults();
         this._selectedIndex = this._webSearchMode && !urlItem
@@ -538,7 +553,7 @@ export default class NutsLauncherExtension extends Extension {
                 const uri = GLib.Uri.parse(candidate, GLib.UriFlags.NONE);
                 if (uri.get_host())
                     return { displayName: `Open URL: ${query}`, url: candidate,
-                        icon: Gio.ThemedIcon.new('web-browser-symbolic') };
+                        icon: this._makeSearchIcon(this._searchConfig.openUrl.icon) };
             } catch (e) {
                 // Invalid URI input remains available as a web search.
             }
@@ -548,6 +563,7 @@ export default class NutsLauncherExtension extends Extension {
 
     _buildSearchResults(query, urlItem) {
         const lq = query.toLowerCase();
+        const maxResults = this._config.maxResults;
         const systemItems = [...this._forceQuitItems, ...this._ejectItems, ...this._systemItems];
         let results;
         if (this._urlMode) {
@@ -561,9 +577,14 @@ export default class NutsLauncherExtension extends Extension {
         } else if (lq === '') {
             results = [];
         } else {
-            const searchItems = [this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem];
-            const fallbackItems = [...searchItems, this._openUrlItem];
-            const candidates = [...searchItems, ...this._apps, ...systemItems, this._openUrlItem];
+            const searchItems = [
+                [this._webSearchItem, this._searchConfig.web.enabled],
+                [this._amazonSearchItem, this._searchConfig.amazon.enabled],
+                [this._youtubeSearchItem, this._searchConfig.youtube.enabled],
+            ].filter(([, enabled]) => enabled).map(([item]) => item);
+            const fallbackItems = [...searchItems, ...(this._searchConfig.openUrl.enabled ? [this._openUrlItem] : [])];
+            const candidates = [...searchItems, ...this._apps, ...systemItems,
+                ...(this._searchConfig.openUrl.enabled ? [this._openUrlItem] : [])];
             const matchRank = item => {
                 const keys = [(item.displayName ?? '').toLowerCase().replace(/\.\.\.$/, ''),
                     item.searchKey ?? '', item.desktopId ?? ''];
@@ -579,12 +600,12 @@ export default class NutsLauncherExtension extends Extension {
             const otherFallbackItems = fallbackItems.filter(item => !matches.includes(item));
             let ordinaryCount = 0;
             results = matches.filter(item => fallbackItems.includes(item) ||
-                ordinaryCount++ < MAX_RESULTS - fallbackItems.length);
+                ordinaryCount++ < maxResults - fallbackItems.length);
             results.push(...otherFallbackItems);
         }
 
         if (urlItem) {
-            if (results.length === MAX_RESULTS)
+            if (results.length === maxResults)
                 results.splice(results.findLastIndex(item => ![this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem, this._openUrlItem].includes(item)), 1);
             results.unshift(urlItem);
         }
@@ -600,7 +621,7 @@ export default class NutsLauncherExtension extends Extension {
                 if (groupedEquation !== equation)
                     values.push(groupedEquation);
                 for (const value of values.reverse()) {
-                    if (results.length === MAX_RESULTS)
+                    if (results.length === maxResults)
                         results.splice(results.findLastIndex(item => ![this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem, this._openUrlItem].includes(item)), 1);
                     results.unshift({ displayName: value.includes('=') ? value : `= ${value}`, icon: Gio.ThemedIcon.new('accessories-calculator-symbolic'),
                         activate: () => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, value) });
@@ -752,18 +773,20 @@ export default class NutsLauncherExtension extends Extension {
     _launchWebSearch(item) {
         const query = this._entry.get_text().trim();
         if (!this._webSearchMode &&
-            (!query || item.displayName.toLowerCase().includes(query.toLowerCase()))) {
+            (!query || item.displayName.toLowerCase().includes(query.toLowerCase()) ||
+                item.searchKey?.includes(query.toLowerCase()))) {
             this._enterInputMode(false);
             return;
         }
         if (query)
-            this._openUri(`https://www.google.com/search?q=${encodeURIComponent(query)}`, 'Web Search');
+            this._openUri(this._searchConfig.web.url.replaceAll('{query}', encodeURIComponent(query)), item.displayName);
     }
 
     _launchAmazonSearch(item) {
         const query = this._entry.get_text().trim();
         if (!this._amazonSearchMode &&
-            (!query || item.displayName.toLowerCase().includes(query.toLowerCase()))) {
+            (!query || item.displayName.toLowerCase().includes(query.toLowerCase()) ||
+                item.searchKey?.includes(query.toLowerCase()))) {
             this._urlMode = false;
             this._webSearchMode = false;
             this._amazonSearchMode = true;
@@ -774,13 +797,14 @@ export default class NutsLauncherExtension extends Extension {
             return;
         }
         if (query)
-            this._openUri(`https://www.amazon.co.jp/s?k=${encodeURIComponent(query)}`, 'Amazon Search');
+            this._openUri(this._searchConfig.amazon.url.replaceAll('{query}', encodeURIComponent(query)), item.displayName);
     }
 
     _launchYouTubeSearch(item) {
         const query = this._entry.get_text().trim();
         if (!this._youtubeSearchMode &&
-            (!query || item.displayName.toLowerCase().includes(query.toLowerCase()))) {
+            (!query || item.displayName.toLowerCase().includes(query.toLowerCase()) ||
+                item.searchKey?.includes(query.toLowerCase()))) {
             this._urlMode = false;
             this._webSearchMode = false;
             this._amazonSearchMode = false;
@@ -791,7 +815,7 @@ export default class NutsLauncherExtension extends Extension {
             return;
         }
         if (query)
-            this._openUri(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, 'YouTube Search');
+            this._openUri(this._searchConfig.youtube.url.replaceAll('{query}', encodeURIComponent(query)), item.displayName);
     }
 
     _openUri(uri, label) {

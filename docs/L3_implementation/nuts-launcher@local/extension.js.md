@@ -10,7 +10,7 @@ GNOME Shell extension `nuts-launcher@local` のメイン実装。DBus サービ�
 
 ### ライフサイクル
 
-`enable()` は内部状態を初期化し、UI 作成、アプリ一覧キャッシュ、システムアクション構築、DBus export を行う。
+`enable()` は永続設定を読み込み、内部状態を初期化し、UI 作成、アプリ一覧キャッシュ、システムアクション構築、DBus export を行う。
 
 ```
 enable()
@@ -84,7 +84,7 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 
 ### 検索・結果表示
 
-検索は display name と desktop id の case-insensitive 部分一致。表示件数は `MAX_RESULTS`（10）に制限する。
+検索は display name と desktop id の case-insensitive 部分一致。表示件数は `Config.maxResults` に制限する。既定値は 10、許容範囲は 8〜100。設定は extension 有効化時に読み込む。根拠コード: `nuts-launcher@local/extension.js:90-92`, `nuts-launcher@local/extension.js:564-625`。
 
 強制終了、eject、システムアクションの順に連結し（以下 `systemItems`）、まとめて扱う。
 
@@ -204,17 +204,17 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 - fuzzy search、最近使ったアプリ、使用頻度学習は未実装
 - システムアクションの実行時の確認や可用性は GNOME Shell の `SystemActions` に従う
 - USB ハブ経由の HDD の再マウント・停止挙動は環境依存であり、実機確認が必要（関連 issue #12）。
+設定された検索項目の有効状態、名前、アイコン、キーワード、URL を適用する。アイコンはテーマ名または画像ファイルを指定できる。根拠コード: `nuts-launcher@local/extension.js:90-122`, `nuts-launcher@local/extension.js:149-155`, `nuts-launcher@local/extension.js:540-587`, `nuts-launcher@local/extension.js:773-818`。
 
 ## 変更履歴（git log より自動生成）
 
-- 4b80551 fix(#50): rank results and improve open URL action
-- d9eaade feat(#41): add YouTube search
+- 0815037 feat(#47): configure built-in search actions
+- d79dd88 feat(#47): add persistent configuration foundation
+- f4f87cc fix(#50): rank results and improve open URL action (#51)
+- 63fedb0 feat(#41): add YouTube search (#42)
 - ffbd738 feat(#39): add Amazon search (#40)
 - 6d07b24 fix(#37): request browser activation for web links (#38)
 - 1af9bdc feat(#35): add calculator search results (#36)
 - f727afd refactor: simplify launcher actions and cleanup
 - 3328e4f feat(#32): open web addresses from launcher (#33)
 - aeb411b feat(#28): add web search to launcher (#29)
-- 46ec9c0 feat(#26): add force quit actions for running apps (#27)
-- d134e11 feat(#20): close launcher on outside click (#21)
-- c62eadf feat(#18): add suspend action to launcher (#19)
