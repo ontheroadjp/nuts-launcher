@@ -124,9 +124,11 @@ HTTP / HTTPS URL は検証後に先頭の Open URL 項目として表示する�
 
 Open URL を名前に一致する入力から選ぶと入力欄を消去して URL 入力モードに切り替え、それ以外の有効な入力は直接開く。有効な URL 項目を選ぶと launcher を閉じて既定のブラウザで開き、失敗時はログと通知で報告する。Web Search と Open URL は GNOME Shell の起動コンテキストを渡してブラウザのアクティブ化を要求する。表示・非表示時にモードをリセットする。
 
-Amazon Search は項目名に一致する検索語で選ぶと入力欄を消去し Amazon 検索モードに切り替える。それ以外の検索語では URL エンコードして Amazon.co.jp の検索結果を既定のブラウザで開く。専用モードでも入力後の Enter で検索する。
+Amazon Search は項目名に一致する検索語で選ぶと入力欄を消去し Amazon 検索モードに切り替える。それ以外の検索語では URL エンコードして Amazon.co.jp の検索結果を既定のブラウザで開く。専用モードでは空欄時に `Go to amazon` を表示し、選択すると Amazon.co.jp のトップページを開く。入力後の Enter では検索する。
 
-YouTube Search も同様に専用モードへ切り替え、または URL エンコードした検索語で YouTube の検索結果を既定のブラウザで開く。
+YouTube Search も同様に専用モードへ切り替え、または URL エンコードした検索語で YouTube の検索結果を既定のブラウザで開く。専用モードの空欄時は `Go to YouTube` を表示し、選択すると YouTube のトップページを開く。
+
+根拠コード: `nuts-launcher@local/extension.js:622-638`, `nuts-launcher@local/extension.js:780-817`
 
 根拠コード: `nuts-launcher@local/extension.js:770-786`
 
@@ -212,7 +214,8 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
-- 08ba025 feat(#53): manage configurable shortcut in extension
+- 7e5d0d6 feat(#55): open search home pages from modes
+- 63073b4 feat(#53): manage configurable shortcut in extension (#54)
 - f0c6ba4 feat(#47): add persistent configuration foundation (#52)
 - f4f87cc fix(#50): rank results and improve open URL action (#51)
 - 63fedb0 feat(#41): add YouTube search (#42)

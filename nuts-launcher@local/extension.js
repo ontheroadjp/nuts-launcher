@@ -627,9 +627,13 @@ export default class NutsLauncherExtension extends Extension {
         if (this._urlMode) {
             results = [this._openUrlItem];
         } else if (this._youtubeSearchMode) {
-            results = [this._youtubeSearchItem];
+            results = query.trim() ? [this._youtubeSearchItem] : [{
+                displayName: 'Go to YouTube', url: 'https://www.youtube.com/', icon: this._youtubeSearchItem.icon,
+            }];
         } else if (this._amazonSearchMode) {
-            results = [this._amazonSearchItem];
+            results = query.trim() ? [this._amazonSearchItem] : [{
+                displayName: 'Go to amazon', url: 'https://www.amazon.co.jp/', icon: this._amazonSearchItem.icon,
+            }];
         } else if (this._webSearchMode) {
             results = [this._webSearchItem];
         } else if (lq === '') {
