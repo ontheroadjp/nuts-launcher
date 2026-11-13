@@ -214,7 +214,8 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
-- 08ba025 feat(#53): manage configurable shortcut in extension
+- 7e5d0d6 feat(#55): open search home pages from modes
+- 63073b4 feat(#53): manage configurable shortcut in extension (#54)
 - f0c6ba4 feat(#47): add persistent configuration foundation (#52)
 - f4f87cc fix(#50): rank results and improve open URL action (#51)
 - 63fedb0 feat(#41): add YouTube search (#42)

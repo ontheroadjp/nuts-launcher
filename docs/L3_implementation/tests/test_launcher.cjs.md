@@ -13,3 +13,16 @@ GNOME Shell の依存 API をスタブ化し、extension の検索、起動、�
 ## 注意事項
 
 スタブを用いたテストであり、GNOME Shell 上の UI やブラウザの実際の起動は実機での確認が必要。
+
+## 変更履歴（git log より自動生成）
+
+- 7e5d0d6 feat(#55): open search home pages from modes
+- 63073b4 feat(#53): manage configurable shortcut in extension (#54)
+- f0c6ba4 feat(#47): add persistent configuration foundation (#52)
+- f4f87cc fix(#50): rank results and improve open URL action (#51)
+- 63fedb0 feat(#41): add YouTube search (#42)
+- ffbd738 feat(#39): add Amazon search (#40)
+- 6d07b24 fix(#37): request browser activation for web links (#38)
+- 1af9bdc feat(#35): add calculator search results (#36)
+- f727afd refactor: simplify launcher actions and cleanup
+- 3328e4f feat(#32): open web addresses from launcher (#33)
