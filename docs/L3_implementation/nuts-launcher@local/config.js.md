@@ -20,5 +20,6 @@
 
 ## 変更履歴（git log より自動生成）
 
-- 08ba025 feat(#53): manage configurable shortcut in extension
+- fad84ac feat(#57): add GitHub and Docker Hub search
+- 63073b4 feat(#53): manage configurable shortcut in extension (#54)
 - f0c6ba4 feat(#47): add persistent configuration foundation (#52)

@@ -16,7 +16,8 @@ GNOME Shell の依存 API をスタブ化し、extension の検索、起動、�
 
 ## 変更履歴（git log より自動生成）
 
-- 7e5d0d6 feat(#55): open search home pages from modes
+- fad84ac feat(#57): add GitHub and Docker Hub search
+- 8f5264b feat(#55): open search home pages from modes (#56)
 - 63073b4 feat(#53): manage configurable shortcut in extension (#54)
 - f0c6ba4 feat(#47): add persistent configuration foundation (#52)
 - f4f87cc fix(#50): rank results and improve open URL action (#51)
@@ -25,4 +26,3 @@ GNOME Shell の依存 API をスタブ化し、extension の検索、起動、�
 - 6d07b24 fix(#37): request browser activation for web links (#38)
 - 1af9bdc feat(#35): add calculator search results (#36)
 - f727afd refactor: simplify launcher actions and cleanup
-- 3328e4f feat(#32): open web addresses from launcher (#33)
