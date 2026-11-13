@@ -128,6 +128,8 @@ fuzzy search・使用頻度学習は実装されていない。
 
 ## キーボード操作
 
+起動ショートカットは extension が登録し、`general.shortcut` で指定する（既定 `<Control><Shift>space`）。`general.switchInputOnLaunch` が true の場合は FepSwitcher に切替を依頼し、失敗しても開く。設定は再有効化時に読み込む。登録が競合または不正な場合は通知する。根拠: `nuts-launcher@local/extension.js:163-205`。
+
 根拠: `nuts-launcher@local/extension.js`
 
 | キー | 動作 |
@@ -197,7 +199,7 @@ const icon = appInfo.get_icon();
 UI actor を destroy する
 DBus object を unexport する
 bus name を unown する
-signal handler を disconnect する
+ショートカットと signal handler を解除し、保留中の FepSwitcher 呼び出しをキャンセルする
 ```
 
 ## wrapper script
@@ -206,7 +208,7 @@ signal handler を disconnect する
 
 ファイル: `~/.local/bin/trigger-nuts-launcher`
 
-FepSwitcher.SwitchToUs() を呼んだ後、`sleep 0.05` を挟んで NutsLauncher.Toggle() を呼ぶ。FepSwitcher の呼び出しが失敗しても Toggle を試みる。GNOME custom shortcut にはこの script を絶対パスで指定する。
+FepSwitcher.SwitchToUs() を呼んだ後、`sleep 0.05` を挟んで NutsLauncher.Toggle() を呼ぶ。FepSwitcher の呼び出しが失敗しても Toggle を試みる。この script は手動利用できる。通常の起動ショートカットは extension が管理する。
 
 ## 現在の対象外
 

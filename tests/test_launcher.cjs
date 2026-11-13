@@ -27,7 +27,7 @@ function fixture() {
     const source = fs.readFileSync(path.join(__dirname, '../nuts-launcher@local/extension.js'), 'utf8')
         .replace(/^import .*;\s*$/gm, '')
         .replace('export default class NutsLauncherExtension', 'class NutsLauncherExtension');
-    const context = { Clutter, Gio, Main, GLib, Shell, St: {}, SystemActions: {},
+    const context = { Clutter, Gio, Main, GLib, Shell, Meta: {}, St: {}, SystemActions: {},
         global: { create_app_launch_context: () => ({}) },
         ShellMountOperation: {}, Extension: class {}, console };
     const Launcher = vm.runInNewContext(`${source}\nNutsLauncherExtension`, context);
@@ -555,6 +555,8 @@ test('configuration persists, validates values, and preserves unknown fields', (
         { GLib, TextDecoder, console: { error: (...args) => errors.push(args) } });
     const first = new Config('config/config.json');
     assert.equal(first.maxResults, 10);
+    assert.equal(first.shortcut, "<Control><Shift>space");
+    assert.equal(first.switchInputOnLaunch, true);
     const initial = JSON.parse(files.get('config/config.json'));
     assert.equal(initial.general.maxResults, 10);
     assert.deepEqual(Object.keys(initial.customSearch), ['openUrl', 'web', 'amazon', 'youtube']);
@@ -651,4 +653,50 @@ test('YouTube keyword ranks first while its display name remains searchable', ()
     launcher._launchSelected();
     assert.equal(launcher._youtubeSearchMode, true);
     assert.equal(query, '');
+});
+
+
+test('shortcut registration, activation and cleanup use the configured key', () => {
+    const { launcher, context, Main, calls } = fixture();
+    const handlers = {};
+    context.Meta.KeyBindingFlags = { NONE: 0 };
+    context.Meta.KeyBindingAction = { NONE: 0 };
+    context.Meta.external_binding_name_for_action = id => `external-${id}`;
+    context.Shell.ActionMode = { NORMAL: 1 };
+    context.global.display = {
+        grab_accelerator: key => { calls.push(['grab', key]); return 42; },
+        connect: (name, handler) => { handlers[name] = handler; return 7; },
+        disconnect: id => calls.push(['disconnect', id]),
+        ungrab_accelerator: id => calls.push(['ungrab', id]),
+    };
+    Main.wm = { allowKeybinding: (...args) => calls.push(['allow', ...args]) };
+    launcher._config = { shortcut: '<Super>space', switchInputOnLaunch: false };
+    launcher._shortcutCancellable = { cancel: () => calls.push(['cancel shortcut']) };
+    launcher._queueShow = () => calls.push(['show']);
+    launcher._unexportDBus = () => {};
+    launcher._destroyUI = () => {};
+    launcher._registerShortcut();
+    handlers['accelerator-activated'](null, 13);
+    handlers['accelerator-activated'](null, 42);
+    launcher.disable();
+    assert.deepEqual(calls, [['grab', '<Super>space'], ['allow', 'external-42', 1], ['show'],
+        ['cancel shortcut'], ['disconnect', 7], ['ungrab', 42]]);
+});
+
+test('shortcut opens when FepSwitcher is unavailable and does not open after disable', () => {
+    const { launcher, Gio, calls } = fixture();
+    Gio.DBusCallFlags = { NO_AUTO_START: 1 };
+    let callback;
+    Gio.DBus.session.call = (...args) => { callback = args.at(-1); };
+    const cancellable = { cancelled: false, is_cancelled() { return this.cancelled; } };
+    launcher._shortcutCancellable = cancellable;
+    launcher._config = { switchInputOnLaunch: true };
+    launcher._queueShow = () => calls.push('show');
+    launcher._activateShortcut();
+    callback({ call_finish: () => { throw Error('unavailable'); } }, {});
+    assert.deepEqual(calls, ['show']);
+    launcher._activateShortcut();
+    cancellable.cancelled = true;
+    callback({ call_finish: () => { throw Error('cancelled'); } }, {});
+    assert.deepEqual(calls, ['show']);
 });

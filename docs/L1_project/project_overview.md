@@ -2,7 +2,7 @@
 
 ## プロジェクトの目的
 
-GNOME Shell でアプリ起動・検索・システム操作を行うランチャー。別途利用可能な FepSwitcher と wrapper を組み合わせて入力切替後に表示できる。
+GNOME Shell でアプリ起動・検索・システム操作を行うランチャー。ショートカット起動時に、別途利用可能な FepSwitcher に入力切替を依頼できる。
 
 根拠: `README.md`, `nuts-launcher@local/extension.js`
 
@@ -57,6 +57,6 @@ GNOME Shell でアプリ起動・検索・システム操作を行うランチ�
 
 - `FepSwitcher` GNOME Shell extension: DBus `SwitchToUs()` で FEP を US に切り替える（修正しない）
 - wrapper script (`~/.local/bin/trigger-nuts-launcher`): FepSwitcher → NutsLauncher.Toggle() の順序制御
-- GNOME custom shortcut: wrapper script を呼び出すトリガー（`install.sh` が条件付きで登録する）
+- extension のショートカット: JSON で指定し、任意で FepSwitcher を呼び出す
 
 根拠: `README.md`, `install.sh`

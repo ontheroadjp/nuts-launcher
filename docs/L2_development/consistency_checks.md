@@ -60,7 +60,8 @@
 
 ### FEP 連携
 
-- [ ] wrapper script 経由で FEP が US に切り替わる
+- [ ] 設定が有効な場合、extension のショートカット起動時に FEP が US に切り替わる
+- [ ] FepSwitcher がない場合や連携を無効化した場合もショートカットで開く
 - [ ] その後 launcher が表示される
 - [ ] 検索欄に英字入力できる
 

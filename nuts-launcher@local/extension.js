@@ -1,6 +1,7 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -96,6 +97,10 @@ export default class NutsLauncherExtension extends Extension {
         this._entryKeyPressId = null;
         this._entryActivateId = null;
         this._showTimeoutId = null;
+        this._shortcutAction = 0;
+        this._shortcutSignalId = 0;
+        this._shortcutPending = false;
+        this._shortcutCancellable = new Gio.Cancellable();
         this._positionIdleId = null;
         this._selectedIndex = 0;
         this._webSearchMode = false;
@@ -131,9 +136,18 @@ export default class NutsLauncherExtension extends Extension {
         this._loadApps();
         this._buildSystemItems();
         this._exportDBus();
+        this._registerShortcut();
     }
 
     disable() {
+        this._shortcutCancellable?.cancel();
+        this._shortcutCancellable = null;
+        if (this._shortcutSignalId)
+            global.display.disconnect(this._shortcutSignalId);
+        if (this._shortcutAction)
+            global.display.ungrab_accelerator(this._shortcutAction);
+        this._shortcutSignalId = 0;
+        this._shortcutAction = 0;
         this._unexportDBus();
         this._destroyUI();
 
@@ -144,6 +158,50 @@ export default class NutsLauncherExtension extends Extension {
         this._rows = null;
         this._ejectItems = null;
         this._forceQuitItems = null;
+    }
+
+    _registerShortcut() {
+        const shortcut = this._config.shortcut;
+        this._shortcutAction = global.display.grab_accelerator(shortcut, Meta.KeyBindingFlags.NONE);
+        if (this._shortcutAction === Meta.KeyBindingAction.NONE) {
+            Main.notifyError('Nuts Launcher', `Could not register shortcut ${shortcut}. Check for an invalid or conflicting shortcut, including the old Nuts Launcher custom shortcut.`);
+            return;
+        }
+        Main.wm.allowKeybinding(Meta.external_binding_name_for_action(this._shortcutAction), Shell.ActionMode.NORMAL);
+        this._shortcutSignalId = global.display.connect('accelerator-activated', (_display, action) => {
+            if (action === this._shortcutAction)
+                this._activateShortcut();
+        });
+    }
+
+    _activateShortcut() {
+        if (this._shortcutPending)
+            return;
+        if (this._visible) {
+            this._hide();
+            return;
+        }
+        if (!this._config.switchInputOnLaunch) {
+            this._queueShow();
+            return;
+        }
+        const cancellable = this._shortcutCancellable;
+        this._shortcutPending = true;
+        Gio.DBus.session.call('org.gnome.Shell.Extensions.FepSwitcher',
+            '/org/gnome/Shell/Extensions/FepSwitcher', 'org.gnome.Shell.Extensions.FepSwitcher',
+            'SwitchToUs', null, null, Gio.DBusCallFlags.NO_AUTO_START, 500, cancellable,
+            (connection, result) => {
+                try {
+                    connection.call_finish(result);
+                } catch (error) {
+                    if (!cancellable.is_cancelled())
+                        console.warn('NutsLauncher: FepSwitcher unavailable:', error);
+                }
+                if (!cancellable.is_cancelled()) {
+                    this._shortcutPending = false;
+                    this._queueShow();
+                }
+            });
     }
 
     _makeSearchIcon(icon) {
