@@ -3,7 +3,7 @@
 ## 前提
 
 - Ubuntu 24.04 LTS + GNOME Wayland 環境
-- FEP 切替を使う場合は `FepSwitcher` GNOME extension が必要。利用できなくても wrapper は launcher の Toggle を試みる
+- FEP 切替を使う場合は `FepSwitcher` GNOME extension が必要。利用できなくても extension のショートカットは launcher を開く
 - CI/CD パイプラインなし（個人用ローカル extension）
 
 根拠: `README.md`
@@ -94,7 +94,7 @@ gdbus call --session \
 
 ## wrapper script
 
-FepSwitcher → NutsLauncher.Toggle() の順番制御は wrapper script で行う。FepSwitcher の呼び出しが失敗しても Toggle を試みる。
+手動利用可能な wrapper script は FepSwitcher → NutsLauncher.Toggle() の順番制御を行う。FepSwitcher の呼び出しが失敗しても Toggle を試みる。
 
 ファイル: `~/.local/bin/trigger-nuts-launcher`（`install.sh` 実行時に `scripts/trigger-nuts-launcher` への symlink として配置される）。実際のコマンドは `scripts/trigger-nuts-launcher` を参照する。
 
@@ -102,8 +102,8 @@ FepSwitcher → NutsLauncher.Toggle() の順番制御は wrapper script で行�
 
 根拠: `README.md`
 
-## GNOME custom shortcut への割り当て
+## 起動ショートカット
 
-`./install.sh` 実行時に `setup_shortcut()` が自動で行う（`<Control><Shift>space` を `~/.local/bin/trigger-nuts-launcher` に割り当て）。既存の wrapper 用 shortcut があれば変更せず、逐次再実行でも重複登録しない。既存の他 custom shortcut と binding が衝突する場合は自動登録をスキップし、エラーと手動での割り当てを案内する。組み込み shortcut や同時実行の競合は検査しない。
+extension は `general.shortcut` のキーを登録する。既定値は `<Control><Shift>space`。`general.switchInputOnLaunch` を false にすると FepSwitcher を呼ばない。設定変更後は extension を再有効化する。古い Nuts Launcher カスタムショートカットが同じキーを使う場合は GNOME の設定から手動で削除する。
 
-根拠: `install.sh`, `docs/L3_implementation/nuts-launcher@local/install.sh.md`
+根拠: `nuts-launcher@local/config.js`, `nuts-launcher@local/extension.js`, `install.sh`

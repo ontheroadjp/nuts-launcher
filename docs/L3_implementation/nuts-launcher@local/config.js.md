@@ -17,7 +17,8 @@
 `extension.js` が有効化時に生成し、検索結果の上限として参照する。実行中の設定ファイル変更は自動監視しないため、反映には extension の再有効化が必要。根拠コード: `nuts-launcher@local/extension.js:90-92`, `nuts-launcher@local/extension.js:564-566`。
 
 設定は `general.maxResults` と `customSearch` に分ける。Open URL と既存の Web・Amazon・YouTube 検索について有効化とアイコンを設定でき、検索項目には表示名、検索 URL テンプレート、キーワードを指定できる。既定の YouTube キーワードは `yt`。既存形式の設定は値を保って移行し、不足項目を補う。検索 URL の `{query}` は URL エンコードされた入力に置換される。根拠コード: `nuts-launcher@local/config.js:6-11`, `nuts-launcher@local/config.js:44-95`, `nuts-launcher@local/config.js:103-122`。
+
 ## 変更履歴（git log より自動生成）
 
-- 0815037 feat(#47): configure built-in search actions
-- d79dd88 feat(#47): add persistent configuration foundation
+- 08ba025 feat(#53): manage configurable shortcut in extension
+- f0c6ba4 feat(#47): add persistent configuration foundation (#52)

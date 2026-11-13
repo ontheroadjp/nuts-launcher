@@ -212,8 +212,8 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 ## 変更履歴（git log より自動生成）
 
-- 0815037 feat(#47): configure built-in search actions
-- d79dd88 feat(#47): add persistent configuration foundation
+- 08ba025 feat(#53): manage configurable shortcut in extension
+- f0c6ba4 feat(#47): add persistent configuration foundation (#52)
 - f4f87cc fix(#50): rank results and improve open URL action (#51)
 - 63fedb0 feat(#41): add YouTube search (#42)
 - ffbd738 feat(#39): add Amazon search (#40)
