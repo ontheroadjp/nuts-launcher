@@ -9,6 +9,8 @@ const DEFAULT_SEARCHES = {
     web: { enabled: true, displayName: 'Web Search...', icon: 'web-browser-symbolic', url: 'https://www.google.com/search?q={query}', keywords: [] },
     amazon: { enabled: true, displayName: 'Amazon Search...', icon: 'amazon.svg', url: 'https://www.amazon.co.jp/s?k={query}', keywords: [] },
     youtube: { enabled: true, displayName: 'YouTube Search...', icon: 'youtube.svg', url: 'https://www.youtube.com/results?search_query={query}', keywords: ['yt'] },
+    github: { enabled: true, displayName: 'GitHub Search...', icon: 'github.svg', url: 'https://github.com/search?q={query}', keywords: [] },
+    docker: { enabled: true, displayName: 'Docker Hub Search...', icon: 'docker.svg', url: 'https://hub.docker.com/search?q={query}', keywords: [] },
 };
 
 export class Config {

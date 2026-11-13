@@ -6,7 +6,7 @@ GNOME Shell の依存 API をスタブ化し、extension の検索、起動、�
 
 ## 動作と統合ポイント
 
-実際の `extension.js` と `config.js` を読み込み、VM 内で GNOME API のスタブと組み合わせる。検索モードのテストは Amazon と YouTube の空欄時のトップページ起動、および検索語の URL エンコードを確認する。
+実際の `extension.js` と `config.js` を読み込み、VM 内で GNOME API のスタブと組み合わせる。検索モードのテストは Amazon、YouTube、GitHub、Docker Hub の空欄時のトップページ起動、および検索語の URL エンコードを確認する。
 
 根拠コード: `tests/test_launcher.cjs:1-54`, `tests/test_launcher.cjs:400-455`
 
