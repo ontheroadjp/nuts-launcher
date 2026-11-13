@@ -106,6 +106,8 @@ export default class NutsLauncherExtension extends Extension {
         this._webSearchMode = false;
         this._amazonSearchMode = false;
         this._youtubeSearchMode = false;
+        this._githubSearchMode = false;
+        this._dockerSearchMode = false;
         this._urlMode = false;
         this._openUrlItem = {
             displayName: 'Open URL...',
@@ -125,6 +127,16 @@ export default class NutsLauncherExtension extends Extension {
             displayName: this._searchConfig.youtube.displayName,
             searchKey: this._searchConfig.youtube.keywords.join(' ').toLowerCase(),
             icon: this._makeSearchIcon(this._searchConfig.youtube.icon),
+        };
+        this._githubSearchItem = {
+            displayName: this._searchConfig.github.displayName,
+            searchKey: this._searchConfig.github.keywords.join(' ').toLowerCase(),
+            icon: this._makeSearchIcon(this._searchConfig.github.icon),
+        };
+        this._dockerSearchItem = {
+            displayName: this._searchConfig.docker.displayName,
+            searchKey: this._searchConfig.docker.keywords.join(' ').toLowerCase(),
+            icon: this._makeSearchIcon(this._searchConfig.docker.icon),
         };
         this._apps = [];
         this._filteredApps = [];
@@ -366,6 +378,8 @@ export default class NutsLauncherExtension extends Extension {
         this._webSearchMode = false;
         this._amazonSearchMode = false;
         this._youtubeSearchMode = false;
+        this._githubSearchMode = false;
+        this._dockerSearchMode = false;
         this._urlMode = false;
         this._entry.hint_text = 'Search applications...';
         this._buildEjectItems();
@@ -390,6 +404,8 @@ export default class NutsLauncherExtension extends Extension {
         this._webSearchMode = false;
         this._amazonSearchMode = false;
         this._youtubeSearchMode = false;
+        this._githubSearchMode = false;
+        this._dockerSearchMode = false;
         this._urlMode = false;
         this._cancelQueuedShow();
         this._mainBox.hide();
@@ -626,6 +642,14 @@ export default class NutsLauncherExtension extends Extension {
         let results;
         if (this._urlMode) {
             results = [this._openUrlItem];
+        } else if (this._githubSearchMode) {
+            results = query.trim() ? [this._githubSearchItem] : [{
+                displayName: 'Go to GitHub', url: 'https://github.com/', icon: this._githubSearchItem.icon,
+            }];
+        } else if (this._dockerSearchMode) {
+            results = query.trim() ? [this._dockerSearchItem] : [{
+                displayName: 'Go to Docker Hub', url: 'https://hub.docker.com/', icon: this._dockerSearchItem.icon,
+            }];
         } else if (this._youtubeSearchMode) {
             results = query.trim() ? [this._youtubeSearchItem] : [{
                 displayName: 'Go to YouTube', url: 'https://www.youtube.com/', icon: this._youtubeSearchItem.icon,
@@ -643,6 +667,8 @@ export default class NutsLauncherExtension extends Extension {
                 [this._webSearchItem, this._searchConfig.web.enabled],
                 [this._amazonSearchItem, this._searchConfig.amazon.enabled],
                 [this._youtubeSearchItem, this._searchConfig.youtube.enabled],
+                [this._githubSearchItem, this._searchConfig.github.enabled],
+                [this._dockerSearchItem, this._searchConfig.docker.enabled],
             ].filter(([, enabled]) => enabled).map(([item]) => item);
             const fallbackItems = [...searchItems, ...(this._searchConfig.openUrl.enabled ? [this._openUrlItem] : [])];
             const candidates = [...searchItems, ...this._apps, ...systemItems,
@@ -668,10 +694,10 @@ export default class NutsLauncherExtension extends Extension {
 
         if (urlItem) {
             if (results.length === maxResults)
-                results.splice(results.findLastIndex(item => ![this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem, this._openUrlItem].includes(item)), 1);
+                results.splice(results.findLastIndex(item => ![this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem, this._githubSearchItem, this._dockerSearchItem, this._openUrlItem].includes(item)), 1);
             results.unshift(urlItem);
         }
-        if (!this._urlMode && !this._webSearchMode && !this._amazonSearchMode && !this._youtubeSearchMode) {
+        if (!this._urlMode && !this._webSearchMode && !this._amazonSearchMode && !this._youtubeSearchMode && !this._githubSearchMode && !this._dockerSearchMode) {
             const result = calculate(query);
             if (result !== null) {
                 const grouped = /e/i.test(result) ? result : groupDigits(result);
@@ -684,7 +710,7 @@ export default class NutsLauncherExtension extends Extension {
                     values.push(groupedEquation);
                 for (const value of values.reverse()) {
                     if (results.length === maxResults)
-                        results.splice(results.findLastIndex(item => ![this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem, this._openUrlItem].includes(item)), 1);
+                        results.splice(results.findLastIndex(item => ![this._webSearchItem, this._amazonSearchItem, this._youtubeSearchItem, this._githubSearchItem, this._dockerSearchItem, this._openUrlItem].includes(item)), 1);
                     results.unshift({ displayName: value.includes('=') ? value : `= ${value}`, icon: Gio.ThemedIcon.new('accessories-calculator-symbolic'),
                         activate: () => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, value) });
                 }
@@ -815,6 +841,11 @@ export default class NutsLauncherExtension extends Extension {
             return;
         }
 
+        if (item === this._githubSearchItem || item === this._dockerSearchItem) {
+            this._launchSiteSearch(item, item === this._githubSearchItem ? 'github' : 'docker');
+            return;
+        }
+
         this._hide();
         if (item.activate)
             item.activate();
@@ -827,6 +858,8 @@ export default class NutsLauncherExtension extends Extension {
         this._webSearchMode = !urlMode;
         this._amazonSearchMode = false;
         this._youtubeSearchMode = false;
+        this._githubSearchMode = false;
+        this._dockerSearchMode = false;
         this._entry.hint_text = urlMode ? 'URL 入力' : 'WEB 検索';
         this._entry.set_text('');
         this._entry.grab_key_focus();
@@ -853,6 +886,8 @@ export default class NutsLauncherExtension extends Extension {
             this._webSearchMode = false;
             this._amazonSearchMode = true;
             this._youtubeSearchMode = false;
+            this._githubSearchMode = false;
+            this._dockerSearchMode = false;
             this._entry.hint_text = 'Amazon 検索';
             this._entry.set_text('');
             this._entry.grab_key_focus();
@@ -871,6 +906,8 @@ export default class NutsLauncherExtension extends Extension {
             this._webSearchMode = false;
             this._amazonSearchMode = false;
             this._youtubeSearchMode = true;
+            this._githubSearchMode = false;
+            this._dockerSearchMode = false;
             this._entry.hint_text = 'YouTube 検索';
             this._entry.set_text('');
             this._entry.grab_key_focus();
@@ -878,6 +915,27 @@ export default class NutsLauncherExtension extends Extension {
         }
         if (query)
             this._openUri(this._searchConfig.youtube.url.replaceAll('{query}', encodeURIComponent(query)), item.displayName);
+    }
+
+    _launchSiteSearch(item, site) {
+        const query = this._entry.get_text().trim();
+        const mode = `_${site}SearchMode`;
+        if (!this[mode] &&
+            (!query || item.displayName.toLowerCase().includes(query.toLowerCase()) ||
+                item.searchKey?.includes(query.toLowerCase()))) {
+            this._urlMode = false;
+            this._webSearchMode = false;
+            this._amazonSearchMode = false;
+            this._youtubeSearchMode = false;
+            this._githubSearchMode = site === 'github';
+            this._dockerSearchMode = site === 'docker';
+            this._entry.hint_text = site === 'github' ? 'GitHub 検索' : 'Docker Hub 検索';
+            this._entry.set_text('');
+            this._entry.grab_key_focus();
+            return;
+        }
+        if (query)
+            this._openUri(this._searchConfig[site].url.replaceAll('{query}', encodeURIComponent(query)), item.displayName);
     }
 
     _openUri(uri, label) {

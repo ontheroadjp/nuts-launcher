@@ -43,6 +43,8 @@ function fixture() {
     launcher._webSearchItem = { displayName: 'Web Search...' };
     launcher._amazonSearchItem = { displayName: 'Amazon Search...' };
     launcher._youtubeSearchItem = { displayName: 'YouTube Search...' };
+    launcher._githubSearchItem = { displayName: 'GitHub Search...' };
+    launcher._dockerSearchItem = { displayName: 'Docker Hub Search...' };
     launcher._openUrlItem = { displayName: 'Open URL...' };
     launcher._webSearchMode = false;
     launcher._urlMode = false;
@@ -88,7 +90,7 @@ test('search matches names and desktop IDs without case sensitivity and limits r
     launcher._updateResults('REBOOT');
     assert.equal(launcher._filteredApps[0].displayName, 'Restart');
     launcher._updateResults('absent');
-    assert.equal(launcher._filteredApps.length, 4);
+    assert.equal(launcher._filteredApps.length, 6);
     assert.equal(launcher._filteredApps[0].displayName, 'Web Search...');
 });
 
@@ -418,6 +420,8 @@ test('Amazon search enters its mode and opens encoded queries', () => {
 for (const [name, input, label, url] of [
     ['Amazon', 'ama', 'Go to amazon', 'https://www.amazon.co.jp/'],
     ['YouTube', 'you', 'Go to YouTube', 'https://www.youtube.com/'],
+    ['GitHub', 'github', 'Go to GitHub', 'https://github.com/'],
+    ['Docker Hub', 'docker', 'Go to Docker Hub', 'https://hub.docker.com/'],
 ]) {
     test(`${name} mode opens its home page when empty`, () => {
         const { launcher, Gio } = fixture();
@@ -432,6 +436,33 @@ for (const [name, input, label, url] of [
         assert.equal(launcher._filteredApps[launcher._selectedIndex].displayName, label);
         launcher._launchSelected();
         assert.deepEqual(calls, ['hide', url]);
+    });
+}
+
+for (const [name, key, input, url] of [
+    ['GitHub', 'github', 'github', 'https://github.com/search?q='],
+    ['Docker Hub', 'docker', 'docker', 'https://hub.docker.com/search?q='],
+]) {
+    test(`${name} searches encoded queries in dedicated and normal modes`, () => {
+        const { launcher, Gio } = fixture();
+        const calls = [];
+        let query = input;
+        launcher._entry = { get_text: () => query, set_text: value => { query = value; launcher._onSearchChanged(); },
+            grab_key_focus: () => {} };
+        launcher._hide = () => calls.push('hide');
+        Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
+        launcher._updateResults(query);
+        launcher._launchSelected();
+        assert.equal(launcher[`_${key}SearchMode`], true);
+        query = '日本語 & cats';
+        launcher._onSearchChanged();
+        launcher._launchSelected();
+        assert.deepEqual(calls, ['hide', `${url}%E6%97%A5%E6%9C%AC%E8%AA%9E%20%26%20cats`]);
+        launcher[`_${key}SearchMode`] = false;
+        launcher._updateResults(query);
+        launcher._selectedIndex = launcher._filteredApps.indexOf(launcher[`_${key}SearchItem`]);
+        launcher._launchSelected();
+        assert.equal(calls.at(-1), `${url}%E6%97%A5%E6%9C%AC%E8%AA%9E%20%26%20cats`);
     });
 }
 
@@ -579,7 +610,7 @@ test('configuration persists, validates values, and preserves unknown fields', (
     assert.equal(first.switchInputOnLaunch, true);
     const initial = JSON.parse(files.get('config/config.json'));
     assert.equal(initial.general.maxResults, 10);
-    assert.deepEqual(Object.keys(initial.customSearch), ['openUrl', 'web', 'amazon', 'youtube']);
+    assert.deepEqual(Object.keys(initial.customSearch), ['openUrl', 'web', 'amazon', 'youtube', 'github', 'docker']);
     first.setMaxResults(15);
     assert.equal(new Config('config/config.json').maxResults, 15);
     files.set('config/config.json', '{"future":true,"maxResults":9}');
@@ -597,6 +628,8 @@ test('configuration persists, validates values, and preserves unknown fields', (
     const savedMigration = JSON.parse(files.get('config/config.json'));
     assert.equal(savedMigration.general.maxResults, 14);
     assert.equal(savedMigration.customSearch.web.enabled, false);
+    assert.equal(savedMigration.customSearch.github.enabled, true);
+    assert.equal(savedMigration.customSearch.docker.enabled, true);
     assert.equal('searches' in savedMigration, false);
     for (const value of [7, 101, 1.5, '10', null]) {
         files.set('config/config.json', JSON.stringify({ general: { maxResults: value } }));

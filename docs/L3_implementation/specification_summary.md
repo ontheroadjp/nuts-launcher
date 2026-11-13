@@ -80,7 +80,7 @@ export default class NutsLauncherExtension extends Extension {
 - ランチャーの外側をクリックすると閉じる
 - 設定 UI とテーマ切替は未実装
 - システムアクションと接続中デバイスの eject は検索文字列に一致した場合に表示する
-- 通常の検索モードでは入力後に有効な Web Search、Amazon Search、YouTube Search、Open URL を表示する。URL 入力モードでは Open URL を表示する
+- 通常の検索モードでは入力後に有効な Web Search、Amazon Search、YouTube Search、GitHub Search、Docker Hub Search、Open URL を表示する。URL 入力モードでは Open URL を表示する
 - HTTP / HTTPS URL は Open URL として先頭に表示する
 
 ## アプリ一覧取得とシステムアクション
@@ -114,11 +114,12 @@ eject アイテムは `_buildEjectItems()` で `Show()` ごとに再構築する
 - case-insensitive 部分一致
 - 検索対象: display name、desktop id、および各アクションの検索語
 - 通常検索で入力が空の場合: 結果を表示しない
-- 入力がある場合: 部分一致するアプリ、強制終了、eject、システムアクションと、Web Search、Amazon Search、YouTube Search、Open URL を表示する。一致候補は完全一致、先頭一致、部分一致の順に表示し、同順位は元の順序を保つ。強制終了は `force quit` / アプリ名で検索可。表示件数は設定可能（既定 10 件、8〜100 件）
+- 入力がある場合: 部分一致するアプリ、強制終了、eject、システムアクションと、Web Search、Amazon Search、YouTube Search、GitHub Search、Docker Hub Search、Open URL を表示する。一致候補は完全一致、先頭一致、部分一致の順に表示し、同順位は元の順序を保つ。強制終了は `force quit` / アプリ名で検索可。表示件数は設定可能（既定 10 件、8〜100 件）
 - 通常検索では四則演算と括弧を含む有効な式の結果と式付き結果を先頭に表示し、選択した形式をクリップボードにコピーする。整数部分が 4 桁以上の場合はカンマ区切りの候補も表示し、式付き候補では `*` と `/` を `×` と `÷` で表示する。不正な式やゼロ除算は計算候補を表示しない
 - 空欄または Web Search の項目名・キーワードに一致する文字列で Web Search を選ぶと入力を消去し、Web 検索モードに切り替える。それ以外の文字列から選ぶと、その文字列で Google 検索を開く。Web 検索モードでは入力後の Enter で検索する
 - Amazon Search も同様に専用モードまたは設定された検索結果を開く。専用モードの空欄時は `Go to amazon` を表示し、選択すると Amazon.co.jp のトップページを開く。既定アイコンは白色の Font Awesome ブランドアイコンを使用する
 - YouTube Search も同様に専用モードまたは設定された検索結果を開く。専用モードの空欄時は `Go to YouTube` を表示し、選択すると YouTube のトップページを開く。既定キーワードは `yt`、既定アイコンは白色の Font Awesome ブランドアイコンを使用する
+- GitHub Search と Docker Hub Search も同様に検索し、専用モードの空欄時にはそれぞれ `Go to GitHub`、`Go to Docker Hub` からトップページを開く。既定アイコンは白色の Font Awesome ブランドアイコンを使用する
 - Open URL を項目名や `http`、`https` に一致する入力で選ぶと URL 入力モードへ切り替える。それ以外の入力では URL を直接開き、スキームを省略した入力には `https://` を補う。空欄、無効な URL、HTTP / HTTPS 以外のスキームは開かない
 - Enter は入力メソッドによる変換確定を優先する
 
@@ -151,7 +152,7 @@ fuzzy search・使用頻度学習は実装されていない。
 
 launcher を閉じて modal grab を解放した後、アプリの場合は desktop ID で `Shell.AppSystem` から取得したアプリを通常は `activate()` する。起動済みなら既存ウィンドウをアクティブ化し、未起動なら起動する。Ctrl+Enter では `open_new_window(-1)` を呼ぶ。取得できない場合は `item.info.launch([], null)` を使う。
 
-Web Search、Amazon Search、YouTube Search と Open URL は GNOME Shell の起動コンテキストを渡して URI を開き、ブラウザのアクティブ化を要求する。
+Web Search、Amazon Search、YouTube Search、GitHub Search、Docker Hub Search と Open URL は GNOME Shell の起動コンテキストを渡して URI を開き、ブラウザのアクティブ化を要求する。
 
 システムアクションの場合:
 ```js
