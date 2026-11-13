@@ -415,6 +415,26 @@ test('Amazon search enters its mode and opens encoded queries', () => {
     assert.deepEqual(calls, ['focus', 'hide', 'https://www.amazon.co.jp/s?k=%E6%97%A5%E6%9C%AC%E8%AA%9E%20%26%20cats']);
 });
 
+for (const [name, input, label, url] of [
+    ['Amazon', 'ama', 'Go to amazon', 'https://www.amazon.co.jp/'],
+    ['YouTube', 'you', 'Go to YouTube', 'https://www.youtube.com/'],
+]) {
+    test(`${name} mode opens its home page when empty`, () => {
+        const { launcher, Gio } = fixture();
+        const calls = [];
+        let query = input;
+        launcher._entry = { get_text: () => query, set_text: value => { query = value; launcher._onSearchChanged(); },
+            grab_key_focus: () => {} };
+        launcher._hide = () => calls.push('hide');
+        Gio.AppInfo.launch_default_for_uri = uri => calls.push(uri);
+        launcher._updateResults(query);
+        launcher._launchSelected();
+        assert.equal(launcher._filteredApps[launcher._selectedIndex].displayName, label);
+        launcher._launchSelected();
+        assert.deepEqual(calls, ['hide', url]);
+    });
+}
+
 test('YouTube search enters its mode and opens encoded queries', () => {
     const { launcher, Gio } = fixture();
     const calls = [];
