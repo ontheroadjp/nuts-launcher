@@ -70,49 +70,17 @@ esac''')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse((self.home / "settings.log").exists())
 
-    def test_shortcut_conflict_is_reported(self):
-        path = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
-        result = self.run_install(TEST_PATHS=f"['{path}']")
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("already used", result.stderr)
-        self.assertFalse((self.home / "settings.log").exists())
-
-    def test_missing_schema_keeps_wrapper_and_reports_incomplete(self):
-        self.stub("gsettings", "exit 1")
-        result = self.run_install()
-        self.assertNotEqual(result.returncode, 0)
-        self.assertTrue((self.home / ".local/bin/trigger-nuts-launcher").is_symlink())
-        self.assertIn("Shortcut setup incomplete", result.stderr)
-
-    def test_setting_failure_is_reported(self):
-        result = self.run_install(SET_STATUS="1")
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Shortcut setup incomplete", result.stderr)
-
-    def test_fep_unavailable_warns_without_failing(self):
-        self.stub("gdbus", "exit 1")
+    def test_no_shortcut_is_registered(self):
         result = self.run_install()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("FepSwitcher", result.stderr)
+        self.assertFalse((self.home / "settings.log").exists())
+        self.assertIn("Remove any old Nuts Launcher custom shortcut", result.stdout)
+        self.assertTrue((self.home / ".local/bin/trigger-nuts-launcher").is_symlink())
 
     def test_success_and_repeat(self):
-        self.stub("gsettings", """
-case "$1" in
-list-schemas) echo org.gnome.settings-daemon.plugins.media-keys ;;
-get) case "$3" in
-custom-keybindings) if [ -f "$HOME/registered" ]; then echo "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/']"; else echo '@as []'; fi ;;
-command) echo "'$HOME/.local/bin/trigger-nuts-launcher'" ;;
-esac ;;
-set) printf '%s\\n' "$*" >> "$HOME/settings.log"; if [ "$3" = custom-keybindings ]; then touch "$HOME/registered"; fi ;;
-esac""")
-        result = self.run_install()
-        self.assertEqual(result.returncode, 0, result.stderr)
-        settings = (self.home / "settings.log").read_text()
-        result = self.run_install()
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Existing launcher shortcut preserved", result.stdout)
-        self.assertEqual((self.home / "settings.log").read_text(), settings)
-        self.assertTrue((self.home / ".local/bin/trigger-nuts-launcher").is_symlink())
+        self.assertEqual(self.run_install().returncode, 0)
+        self.assertEqual(self.run_install().returncode, 0)
+        self.assertFalse((self.home / "settings.log").exists())
 
 
 if __name__ == "__main__":

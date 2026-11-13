@@ -24,7 +24,7 @@ cd nuts-launcher
 ./install.sh
 ```
 
-The installer creates symbolic links for the extension and its launcher script, enables the extension, and registers a custom shortcut (`Ctrl+Shift+Space`). An existing shortcut for the launcher script is preserved. If another custom shortcut uses that binding, registration stops; conflicts with GNOME's built-in shortcuts are not checked.
+The installer creates symbolic links for the extension and its launcher script and enables the extension. The extension registers `Ctrl+Shift+Space` by default. If upgrading from an earlier installation, remove the old Nuts Launcher custom shortcut in GNOME Settings → Keyboard → Keyboard Shortcuts → Custom Shortcuts to avoid a conflict. The installer does not delete existing shortcuts.
 
 If GNOME Shell has not discovered the extension, log out and back in, enable it as instructed by the installer, and rerun the installer. Existing files or unrelated symbolic links at the destination paths are preserved; move them aside before retrying.
 
@@ -32,7 +32,7 @@ Switching the input method to US requires the separate FepSwitcher extension. Th
 
 ## Usage
 
-1. Press `Ctrl+Shift+Space` to open the launcher. If you already have a shortcut for the launcher script, use that shortcut instead.
+1. Press `Ctrl+Shift+Space` to open the launcher, or use the configured shortcut.
 2. Type an application name, action, search query, or URL. The result list is empty until you type.
 3. Select an item with `Up` / `Down` or `Ctrl+K` / `Ctrl+J`, then press `Enter` to run it. Press `Ctrl+Enter` to request a new application window, or `Esc` to close the launcher.
 
@@ -46,7 +46,7 @@ Enter an expression such as `1234*2` to calculate it. Select a result or equatio
 
 `./install.sh` links the repository's `nuts-launcher@local/` directory to `~/.local/share/gnome-shell/extensions/nuts-launcher@local`. Reinstallation is unnecessary after code changes, but on Wayland you must log out and back in to reload GNOME Shell.
 
-To install only the extension manually, create the destination's parent directory first if necessary, then run the following. These steps do not install the wrapper or configure a shortcut.
+To install only the extension manually, create the destination's parent directory first if necessary, then run the following. These steps do not install the optional wrapper; the extension registers its own shortcut.
 
 ```bash
 ln -s "$PWD/nuts-launcher@local" ~/.local/share/gnome-shell/extensions/nuts-launcher@local
@@ -57,7 +57,7 @@ gnome-extensions enable nuts-launcher@local
 
 On first enable, the extension creates `nuts-launcher/config.json` under `XDG_CONFIG_HOME` (or `~/.config` when unset). Edit `general.maxResults` to set the result limit (8–100, default 10). Under `customSearch`, the existing Open URL and search actions have an `enabled` flag and `icon`; the three search actions also support `displayName`, `url` with a `{query}` placeholder, and a `keywords` array. The default YouTube keyword is `yt`. Icon values are GNOME icon names or image paths; relative paths are resolved against the extension directory. Arbitrary new search actions are not supported yet.
 
-Disable and enable the extension to reload configuration changes. Invalid values use defaults; existing values are preserved when missing defaults are added.
+Set `general.shortcut` to a GNOME accelerator such as `<Control><Shift>space` (the default), and set `general.switchInputOnLaunch` to `false` to skip the optional FepSwitcher call (default `true`). If FepSwitcher is unavailable, the launcher still opens. A shortcut that is invalid or already in use cannot be registered; check the GNOME notification and choose a different key. Disable and enable the extension to reload configuration changes. Invalid values use defaults; existing values are preserved when missing defaults are added.
 
 ### DBus control
 

@@ -3,6 +3,7 @@ import GLib from 'gi://GLib';
 const DEFAULT_MAX_RESULTS = 10;
 const MIN_MAX_RESULTS = 8;
 const MAX_MAX_RESULTS = 100;
+const DEFAULT_SHORTCUT = '<Control><Shift>space';
 const DEFAULT_SEARCHES = {
     openUrl: { enabled: true, icon: 'web-browser-symbolic' },
     web: { enabled: true, displayName: 'Web Search...', icon: 'web-browser-symbolic', url: 'https://www.google.com/search?q={query}', keywords: [] },
@@ -21,7 +22,7 @@ export class Config {
         this._values = {};
         if (!GLib.file_test(this._path, GLib.FileTest.EXISTS)) {
             try {
-                this._write({ general: { maxResults: DEFAULT_MAX_RESULTS }, customSearch: DEFAULT_SEARCHES });
+                this._write({ general: { maxResults: DEFAULT_MAX_RESULTS, shortcut: DEFAULT_SHORTCUT, switchInputOnLaunch: true }, customSearch: DEFAULT_SEARCHES });
             } catch (error) {
                 console.error('NutsLauncher: could not initialize configuration:', error);
             }
@@ -56,6 +57,14 @@ export class Config {
             typeof values.general === 'object' && !Array.isArray(values.general)) {
             delete values.maxResults;
             changed = true;
+        }
+        if (values.general && typeof values.general === 'object' && !Array.isArray(values.general)) {
+            for (const [key, value] of Object.entries({ shortcut: DEFAULT_SHORTCUT, switchInputOnLaunch: true })) {
+                if (!Object.hasOwn(values.general, key)) {
+                    values.general = { ...values.general, [key]: value };
+                    changed = true;
+                }
+            }
         }
         if (!Object.hasOwn(values, 'customSearch') && Object.hasOwn(values, 'searches')) {
             values.customSearch = values.searches;
@@ -98,6 +107,16 @@ export class Config {
         const value = this._values.general?.maxResults;
         return Number.isInteger(value) && value >= MIN_MAX_RESULTS && value <= MAX_MAX_RESULTS
             ? value : DEFAULT_MAX_RESULTS;
+    }
+
+    get shortcut() {
+        const value = this._values.general?.shortcut;
+        return typeof value === 'string' && value.trim() ? value : DEFAULT_SHORTCUT;
+    }
+
+    get switchInputOnLaunch() {
+        const value = this._values.general?.switchInputOnLaunch;
+        return typeof value === 'boolean' ? value : true;
     }
 
     get searches() {

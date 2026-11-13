@@ -30,6 +30,10 @@ disable()
 
 根拠コード: `nuts-launcher@local/extension.js:26-65`, `nuts-launcher@local/extension.js:107-115`, `nuts-launcher@local/extension.js:174-198`
 
+### グローバルショートカット
+
+有効化時に JSON のアクセラレータを GNOME Shell に登録する。登録失敗時は競合または不正な設定を通知する。ショートカットで開く場合、設定が有効なら FepSwitcher の `SwitchToUs` を非同期で呼び、失敗・タイムアウト時も開く。無効化時は保留呼び出しをキャンセルし、signal とアクセラレータを解放する。根拠コード: `nuts-launcher@local/extension.js:90-103`, `nuts-launcher@local/extension.js:135-150`, `nuts-launcher@local/extension.js:163-205`。
+
 ### DBus API
 
 公開する DBus interface は `org.gnome.Shell.Extensions.NutsLauncher`。object path は `/org/gnome/Shell/Extensions/NutsLauncher`。

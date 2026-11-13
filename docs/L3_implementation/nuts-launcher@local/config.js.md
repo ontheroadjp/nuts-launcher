@@ -10,6 +10,8 @@
 
 `maxResults` は 8〜100 の整数で、既定値は 10。更新時には他の設定項目を保持して保存し、成功後にメモリ上の値を更新する。書き込み失敗は呼び出し元に伝える。根拠コード: `nuts-launcher@local/config.js:3-5`, `nuts-launcher@local/config.js:97-137`。
 
+`general.shortcut` は GNOME アクセラレータ文字列（既定 `<Control><Shift>space`）、`general.switchInputOnLaunch` は FepSwitcher 連携の有無（既定 true）。既存設定には不足項目を追加する。根拠コード: `nuts-launcher@local/config.js:45-68`, `nuts-launcher@local/config.js:112-120`。
+
 ## 統合と制限
 
 `extension.js` が有効化時に生成し、検索結果の上限として参照する。実行中の設定ファイル変更は自動監視しないため、反映には extension の再有効化が必要。根拠コード: `nuts-launcher@local/extension.js:90-92`, `nuts-launcher@local/extension.js:564-566`。
