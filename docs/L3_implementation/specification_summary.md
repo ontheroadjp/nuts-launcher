@@ -102,7 +102,7 @@ const apps = Gio.AppInfo.get_all()
 
 システムアクション（Suspend / Log Out / Shut Down / Restart）は `_buildSystemItems()` で静的に構築する。各アイテムは `displayName`・`searchKey`・`icon`・`activate` を持ち、`activate` は `SystemActions.getDefault()` の各メソッドへの closure。Suspend は `suspend` または `sleep` で検索できる。
 
-eject アイテムは `_buildEjectItems()` で `Show()` ごとに再構築する。`Gio.VolumeMonitor` の mount を drive 単位でまとめ、removable / ejectable / stoppable な drive だけを対象にする。
+eject アイテムは `_buildEjectItems()` で `Show()` ごとに再構築する。`Gio.VolumeMonitor` の mount を drive 単位でまとめ、removable / ejectable / stoppable な drive を対象にする。
 
 強制終了アイテムは `Show()` ごとに `Shell.AppSystem.get_running()` から作る。GNOME Shell が返す起動中アプリごとに `Force Quit <名前>` を表示する。
 
@@ -161,7 +161,7 @@ item.activate(); // SystemActions.getDefault().activateLogout()、_ejectDrive() 
 
 - アプリ起動失敗時: GNOME Shell log に error を出す
 - システムアクションは GNOME Shell の `SystemActions` に委ねる。確認ダイアログや可用性は実機で確認する
-- eject は `drive.stop()`（不可なら `drive.eject_with_operation()`）を `ShellMountOperation` 付きで実行し、結果を通知する
+- eject は操作時に可否を再確認し、`drive.stop()`（不可なら `drive.eject_with_operation()`）を `ShellMountOperation` 付きで実行し、結果を通知する。どちらも不可能な場合はエラーを通知する
 - 強制終了は選択時に対象アプリの現在のウィンドウごとに `kill()` を呼び、例外はログと通知で報告する。未保存データは失われ得る
 
 ## Show() 時の状態リセット
@@ -170,7 +170,7 @@ item.activate(); // SystemActions.getDefault().activateLogout()、_ejectDrive() 
 
 - 検索文字列を空にする
 - 選択 index を 0 に戻す
-- アプリ一覧は enable 時のキャッシュを使用する
+- アプリ一覧を再取得する
 - 検索欄に focus する
 
 ## フォーカス制御
