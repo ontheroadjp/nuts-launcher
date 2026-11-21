@@ -145,7 +145,6 @@ export default class NutsLauncherExtension extends Extension {
         this._forceQuitItems = [];
 
         this._buildUI();
-        this._loadApps();
         this._buildSystemItems();
         this._exportDBus();
         this._registerShortcut();
@@ -382,6 +381,7 @@ export default class NutsLauncherExtension extends Extension {
         this._dockerSearchMode = false;
         this._urlMode = false;
         this._entry.hint_text = 'Search applications...';
+        this._loadApps();
         this._buildEjectItems();
         this._buildForceQuitItems();
         this._entry.set_text('');
@@ -567,27 +567,41 @@ export default class NutsLauncherExtension extends Extension {
     }
 
     _ejectDrive(drive, mount, name) {
+        if (!drive.can_stop() && !drive.can_eject()) {
+            Main.notifyError(`Failed to eject ${name}`, 'The drive can no longer be stopped or ejected');
+            return;
+        }
         // stop() powers the drive down after unmounting (safe for USB HDDs);
         // eject() is the fallback for media drives such as optical drives.
         const [start, finish] = drive.can_stop()
             ? ['stop', 'stop_finish']
             : ['eject_with_operation', 'eject_with_operation_finish'];
 
-        // ShellMountOperation shows GNOME's "device is busy" dialog when needed.
-        // It expects a mount or volume (it calls source.get_drive()), not a drive.
-        const op = new ShellMountOperation.ShellMountOperation(mount);
-        drive[start](Gio.MountUnmountFlags.NONE, op.mountOp, null, (source, res) => {
-            op.close();
-            try {
-                source[finish](res);
-                Main.notify(`${name} can be safely removed`);
-            } catch (e) {
-                if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.FAILED_HANDLED)) {
-                    console.error(`NutsLauncher: failed to eject ${name}:`, e);
-                    Main.notifyError(`Failed to eject ${name}`, e.message);
+        const reportError = error => {
+            if (typeof error?.matches === 'function' && error.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.FAILED_HANDLED))
+                return;
+            console.error(`NutsLauncher: failed to eject ${name}:`, error);
+            Main.notifyError(`Failed to eject ${name}`, error?.message ?? String(error));
+        };
+        // ShellMountOperation expects a mount or volume, not a drive.
+        let op;
+        try {
+            op = new ShellMountOperation.ShellMountOperation(mount);
+            drive[start](Gio.MountUnmountFlags.NONE, op.mountOp, null, (source, res) => {
+                try {
+                    if (!source[finish](res))
+                        throw new Error('The drive operation did not complete successfully');
+                    Main.notify(`${name} can be safely removed`);
+                } catch (error) {
+                    reportError(error);
+                } finally {
+                    op.close();
                 }
-            }
-        });
+            });
+        } catch (error) {
+            op?.close();
+            reportError(error);
+        }
     }
 
     _loadApps() {

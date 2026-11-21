@@ -132,6 +132,71 @@ test('Open URL remains available for ordinary queries even when results are full
     assert.ok(launcher._filteredApps.includes(launcher._openUrlItem));
 });
 
+test('show refreshes installed applications each time', () => {
+    const { launcher, Gio } = fixture();
+    let apps = [];
+    Gio.AppInfo.get_all = () => apps;
+    launcher._entry = { set_text() {}, grab_key_focus() {} };
+    launcher._mainBox = { show() {}, hide() {} };
+    launcher._buildEjectItems = () => {};
+    launcher._buildForceQuitItems = () => {};
+    launcher._updateResults = () => {};
+    launcher._positionWindow = () => {};
+    launcher._acquireModalGrab = () => true;
+    const app = { should_show: () => true, get_display_name: () => 'New app',
+        get_id: () => 'new.desktop', get_icon: () => null };
+    apps = [app];
+    launcher._show();
+    assert.equal(launcher._apps[0].displayName, 'New app');
+    apps = [];
+    launcher._show();
+    assert.equal(launcher._apps.length, 0);
+});
+
+test('eject shows removable drives and checks capability on activation', () => {
+    const { launcher, Gio, Main } = fixture();
+    let stoppable = true;
+    const drive = { is_removable: () => true, can_stop: () => stoppable, can_eject: () => false };
+    const unsupported = { can_stop: () => false, can_eject: () => false, is_removable: () => true };
+    const mount = (device, name) => ({ is_shadowed: () => false, get_drive: () => device, get_name: () => name });
+    Gio.VolumeMonitor = { get: () => ({ get_mounts: () => [mount(drive, 'Disk'), mount(unsupported, 'Unsupported')] }) };
+    launcher._buildEjectItems();
+    assert.deepEqual(Array.from(launcher._ejectItems, item => item.displayName), ['Eject Disk', 'Eject Unsupported']);
+    const errors = [];
+    Main.notifyError = (...args) => errors.push(args);
+    stoppable = false;
+    launcher._ejectItems[0].activate();
+    assert.equal(errors.length, 1);
+    launcher._ejectItems[1].activate();
+    assert.equal(errors.length, 2);
+});
+
+test('eject reports start and completion errors and closes the mount operation', () => {
+    const { launcher, Gio, Main, context } = fixture();
+    const notifications = [];
+    let closes = 0;
+    Gio.MountUnmountFlags = { NONE: 0 };
+    Gio.IOErrorEnum = { FAILED_HANDLED: 1 };
+    Main.notify = message => notifications.push(message);
+    Main.notifyError = (title, message) => notifications.push(`${title}: ${message}`);
+    context.ShellMountOperation.ShellMountOperation = class {
+        constructor() { this.mountOp = {}; }
+        close() { closes++; }
+    };
+    const drive = { can_stop: () => true, can_eject: () => false,
+        stop: () => { throw new Error('start failed'); } };
+    launcher._ejectDrive(drive, {}, 'Disk');
+    assert.match(notifications.pop(), /start failed/);
+    drive.stop = (_flags, _op, _cancellable, callback) => callback(drive, {});
+    drive.stop_finish = () => { throw new Error('device busy'); };
+    launcher._ejectDrive(drive, {}, 'Disk');
+    assert.match(notifications.pop(), /device busy/);
+    drive.stop_finish = () => true;
+    launcher._ejectDrive(drive, {}, 'Disk');
+    assert.match(notifications.pop(), /safely removed/);
+    assert.equal(closes, 3);
+});
+
 test('empty search displays no results', () => {
     const { launcher } = fixture();
     launcher._apps = Array.from({ length: 10 }, (_, i) => ({ displayName: `App ${i}` }));

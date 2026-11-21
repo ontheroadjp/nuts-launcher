@@ -8,6 +8,8 @@ GNOME Shell の依存 API をスタブ化し、extension の検索、起動、�
 
 実際の `extension.js` と `config.js` を読み込み、VM 内で GNOME API のスタブと組み合わせる。検索モードのテストは Amazon、YouTube、GitHub、Docker Hub の空欄時のトップページ起動、および検索語の URL エンコードを確認する。
 
+表示ごとのアプリ一覧の更新、取り外し不可のドライブの表示、操作時の可否確認および開始時・完了時のエラー処理も検証する。
+
 根拠コード: `tests/test_launcher.cjs:1-54`, `tests/test_launcher.cjs:400-455`
 
 ## 注意事項

@@ -10,12 +10,11 @@ GNOME Shell extension `nuts-launcher@local` のメイン実装。DBus サービ�
 
 ### ライフサイクル
 
-`enable()` は永続設定を読み込み、内部状態を初期化し、UI 作成、アプリ一覧キャッシュ、システムアクション構築、DBus export を行う。
+`enable()` は永続設定を読み込み、内部状態を初期化し、UI 作成、システムアクション構築、DBus export を行う。
 
 ```
 enable()
   -> _buildUI()
-  -> _loadApps()
   -> _buildSystemItems()
   -> _exportDBus()
 ```
@@ -66,7 +65,7 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 
 ### アプリ一覧とシステムアクション
 
-アプリ一覧は `enable()` 時に `Gio.AppInfo.get_all()` から取得し、`should_show()` と display name で絞り込む。
+アプリ一覧は `_show()` ごとに `Gio.AppInfo.get_all()` から取得し、`should_show()` と display name で絞り込む。根拠コード: `nuts-launcher@local/extension.js:377-386`, `nuts-launcher@local/extension.js:597-608`。
 
 システムアクション（Suspend、Log Out、Shut Down、Restart）は `_buildSystemItems()` で静的に構築する。各アイテムは `displayName`、`searchKey`（複数キーワードを空白区切りで含む）、`icon`、`activate` を持つ。`activate` は `SystemActions.getDefault()` の各メソッドへの closure。Suspend は `suspend` または `sleep` で検索できる。
 
@@ -76,7 +75,7 @@ root の `captured-event` はボタン押下の座標を root の表示領域と
 
 `_buildEjectItems()` は `Gio.VolumeMonitor.get().get_mounts()` から mount を集め、drive ごとにまとめて `Eject <名前>` アイテムを 1 件ずつ作る。対象は `is_removable()`・`can_eject()`・`can_stop()` のいずれかを満たす drive の mount に限る。shadowed な mount と drive を持たない mount（ネットワーク、スマートフォン、gdrive 等）は除外する。1 台に複数の mount がある場合、表示名は mount 名を `, ` で連結する。デバイスがなければアイテムは作らない。`searchKey` は `eject unmount remove <名前>`。
 
-`_ejectDrive(drive, mount, name)` は `drive.can_stop()` なら `drive.stop()`（コード上のコメントではアンマウント後の電源オフを意図）、そうでなければ `drive.eject_with_operation()` を呼ぶ。mount operation には `ShellMountOperation` を使い、使用中デバイスのダイアログを GNOME 標準のものにする。成功時は `Main.notify()`、失敗時は `Main.notifyError()` で通知する（`FAILED_HANDLED` は通知しない）。
+`_ejectDrive(drive, mount, name)` は操作時に可否を再確認し、`drive.can_stop()` なら `drive.stop()`、そうでなければ `can_eject()` の場合に `drive.eject_with_operation()` を呼ぶ。どちらも不可なら通知して終了する。mount operation には `ShellMountOperation` を使い、使用中デバイスのダイアログを GNOME 標準のものにする。開始時と完了時の失敗を通知し、成功時のみ安全に取り外せると通知する（`FAILED_HANDLED` は通知しない）。mount operation は終了時に閉じる。根拠コード: `nuts-launcher@local/extension.js:541-605`。
 
 根拠コード: `nuts-launcher@local/extension.js:374-424`
 
@@ -207,7 +206,7 @@ DBus `Show()` 直後に keyboard grab を取ると、呼び出し元 terminal/tm
 
 - `shell-version: ["46", "50"]` を対象にしている
 - GNOME 50 の `is_revoked()` 判定は、gnome-shell 本体が grab 結果を検査しなくなったため代替として採用したもの。keyboard を取得できなかった grab を確実に検出できるかは未検証
-- アプリ一覧は `enable()` 時にキャッシュするため、インストール/アンインストール後は extension reload が必要
+- アプリ一覧は launcher を開くたびに更新する。表示中の変更は次回表示時に反映される
 - multi-monitor 対応は primary monitor のみ
 - fuzzy search、最近使ったアプリ、使用頻度学習は未実装
 - システムアクションの実行時の確認や可用性は GNOME Shell の `SystemActions` に従う
