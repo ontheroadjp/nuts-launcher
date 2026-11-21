@@ -509,9 +509,11 @@ test('keyboard navigation clamps selection and dispatches launch and escape', ()
     key(Clutter.KEY_j, Clutter.ModifierType.CONTROL_MASK);
     key(Clutter.KEY_Down);
     assert.equal(launcher._selectedIndex, 1);
-    assert.equal(key(Clutter.KEY_Return, Clutter.ModifierType.CONTROL_MASK), Clutter.EVENT_PROPAGATE);
+    assert.equal(key(Clutter.KEY_Return), Clutter.EVENT_PROPAGATE);
+    assert.equal(key(Clutter.KEY_Return, Clutter.ModifierType.CONTROL_MASK), Clutter.EVENT_STOP);
+    assert.equal(key(Clutter.KEY_KP_Enter, Clutter.ModifierType.CONTROL_MASK), Clutter.EVENT_STOP);
     key(Clutter.KEY_Escape);
-    assert.deepEqual(calls, [['hide']]);
+    assert.deepEqual(calls, [['launch', true], ['launch', true], ['hide']]);
     assert.equal(key(999), Clutter.EVENT_PROPAGATE);
 });
 

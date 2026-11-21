@@ -777,6 +777,11 @@ export default class NutsLauncherExtension extends Extension {
             return Clutter.EVENT_STOP;
         }
 
+        if (ctrl && (sym === Clutter.KEY_Return || sym === Clutter.KEY_KP_Enter)) {
+            this._launchSelected(true);
+            return Clutter.EVENT_STOP;
+        }
+
         if (sym === Clutter.KEY_Down || (ctrl && sym === Clutter.KEY_j)) {
             this._moveSelection(1);
             return Clutter.EVENT_STOP;
