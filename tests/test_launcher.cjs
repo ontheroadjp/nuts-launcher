@@ -75,6 +75,32 @@ test('entry activation launches after input processing and preserves control mod
     assert.deepEqual(launches, [true]);
 });
 
+test('Ctrl+Enter closes the launcher and requests a new application window', () => {
+    const { launcher, Clutter, Main, appSystem, context } = fixture();
+    const handlers = {};
+    const text = { set_activatable: () => {},
+        connect: (name, handler) => { handlers[name] = handler; return 1; } };
+    class Box { connect() {} add_child() {} hide() {} }
+    class Entry { get_clutter_text() { return text; } }
+    context.St.BoxLayout = Box;
+    context.St.Entry = Entry;
+    Main.layoutManager.addTopChrome = () => {};
+    launcher._buildUI();
+
+    const calls = [];
+    launcher._hide = () => calls.push('hide');
+    launcher._selectedIndex = 0;
+    launcher._filteredApps = [{ info: { get_id: () => 'app.desktop' } }];
+    appSystem.lookup_app = () => ({ activate: () => calls.push('activate'),
+        open_new_window: workspace => calls.push(['new window', workspace]) });
+
+    for (const symbol of [Clutter.KEY_Return, Clutter.KEY_KP_Enter]) {
+        assert.equal(handlers['key-press-event'](text, { get_key_symbol: () => symbol,
+            get_state: () => Clutter.ModifierType.CONTROL_MASK }), Clutter.EVENT_STOP);
+        assert.deepEqual(calls.splice(0), ['hide', ['new window', -1]]);
+    }
+});
+
 test('search matches names and desktop IDs without case sensitivity and limits results', () => {
     const { launcher } = fixture();
     launcher._apps = Array.from({ length: 12 }, (_, i) => ({
